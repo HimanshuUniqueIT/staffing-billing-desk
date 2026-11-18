@@ -242,7 +242,7 @@ function seedHistory(){
   S.seeded=1;
 }
 function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
-const U={plMode:'table',plEdit:null,plErr:null,delConfirm:false,wk:LAST_WK,tsF:'all',tsQ:'',tsSel:null,plF:'all',plQ:'',plT:'all',plSel:null,arF:'unpaid',arC:'all',arSel:null,invC:null,invN:null,invQ:'',invW:null,invDr:false,fteDr:false,fteSel:null,fteQ:'',payTab:'run',pyMode:'week',pyWk:LAST_WK,pyFrom:'2026-01-01',pyTo:'2026-06-30',pyBasis:'pd',pyT:'all',pyQ:'',pyDr:false,pySel:null,payDate:'2026-07-10',mon:'2026-05',recSel:null,rep:'state',confirmReset:false};
+const U={plMode:'table',plEdit:null,plErr:null,delConfirm:false,wk:LAST_WK,tsF:'all',tsQ:'',tsSel:null,plF:'all',plQ:'',plT:'all',plSel:null,arF:'unpaid',arC:'all',arSel:null,invC:null,invN:null,invQ:'',invW:null,invDr:false,fteDr:false,fteSel:null,fteQ:'',payTab:'run',pyMode:'week',pyWk:LAST_WK,pyFrom:'2026-01-01',pyTo:'2026-06-30',pyBasis:'pd',pyT:'all',pyQ:'',pyDr:false,pySel:null,payDate:'2026-07-10',mon:'2026-05',recSel:null,rep:'state',confirmReset:false,usEd:null,usErr:null,usDraft:null,usF:'active',usQ:''};
 
 /* ---------- calculations (same rules as the workbook) ---------- */
 function client(n){const b=D.clients.concat(S.xc||[]).find(c=>c.name===n)||{name:n,msp:0,otx:1,dtx:1,terms:30,scomm:0};return Object.assign({},b,S.clients[n]||{})}
@@ -289,7 +289,7 @@ function commission(mon){
 }
 
 /* ---------- roles (RBAC) ---------- */
-const ROLES=[
+const BASE_ROLES=[
  {id:'admin',label:'Admin',kind:'admin'},
  {id:'finance',label:'Finance team',kind:'finance'},
  {id:'payroll',label:'Payroll team',kind:'payroll'},
@@ -313,7 +313,12 @@ const PERMS={
  lead:   {nav:['home','timesheets','candidates','invoices','commission'],bill:1,pay:1,margin:1,editCands:1,editHours:1,scope:'Only placements they are named on'},
  rec:    {nav:['home','candidates','commission'],bill:0,pay:0,margin:0,scope:'Only their placements · no rates'},
  exec:   {nav:ALLNAV,bill:1,pay:1,margin:1,scope:'Everything · view only'}};
-const role=()=>ROLES.find(r=>r.id===S.role)||ROLES[0];
+const KINDS=[['admin','Admin'],['finance','Finance team'],['payroll','Payroll team'],['dm','DM (Delivery Manager)'],['sd','Sales Director'],['lead','Lead (Sales / Delivery)'],['rec','Recruiter'],['exec','Executive (read-only)']];
+const KLBL=Object.fromEntries(KINDS);const SCOPED=['dm','sd','lead','rec'];
+function ensureUsers(){if(!S.users)S.users=BASE_ROLES.map(r=>({id:r.id,label:r.label,name:r.p||r.label,email:'',kind:r.kind,p:r.p||'',active:true,added:null,base:1}))}
+function uLabel(u){if(u.label)return u.label;const k=KLBL[u.kind].replace(/ \(.*\)/,'');return u.name+' · '+k}
+function roles(){ensureUsers();return S.users.filter(u=>u.active!==false).map(u=>({id:u.id,label:uLabel(u),kind:u.kind,p:SCOPED.includes(u.kind)?u.p:undefined}))}
+const role=()=>{const a=roles();return a.find(r=>r.id===S.role)||a[0]};
 const PM=()=>PERMS[role().kind];
 function inScope(c){const r=role();switch(r.kind){case 'dm':return c.dm===r.p;case 'sd':return c.sd===r.p;case 'lead':return [c.sl,c.dl,c.rec].includes(r.p);case 'rec':return c.rec===r.p||c.dl===r.p;default:return true}}
 const fteScope=f=>{const r=role();return ['lead','rec'].includes(r.kind)?String(f.rec).includes(r.p):true};
@@ -933,14 +938,62 @@ V.reports=()=>{
 };
 
 V.users=()=>{
-  const yes='<span class="pill good">Yes</span>',no='<span class="pill">No</span>';
-  return head('Users & roles','Who can sign in, which placements each person sees, and which numbers are shown. Use “Viewing as” at the top to try any role.')+
-  `<section class="card tbl"><table><thead><tr><th>User</th><th>Sees which placements</th><th>Menu</th><th>Bill rates</th><th>Pay rates</th><th>Margin</th><th>Can change</th><th></th></tr></thead><tbody>
-  ${ROLES.map(r=>{const p=PERMS[r.kind];const can=[p.editCands&&'candidates',p.editHours&&'hours',p.editPay&&'payments',p.editClients&&'clients',p.approve&&'approve commission'].filter(Boolean).join(', ')||'nothing';
-   return `<tr class="${r.id===S.role?'sel':''}"><td class="nm">${esc(r.label)}</td><td>${p.scope}</td><td class="sm-t">${p.nav.map(n=>NAVLBL[n]).join(', ')}</td><td>${p.bill?yes:no}</td><td>${p.pay?yes:no}</td><td>${p.margin?yes:no}</td><td class="sm-t">${can}</td><td><button class="btn sm" data-act="as" data-v="${r.id}">View as</button></td></tr>`}).join('')}
+  const yes='<span class="pill good">Yes</span>',no='<span class="pill">No</span>',adm=role().kind==='admin';ensureUsers();
+  const all=S.users,q=U.usQ.trim().toLowerCase(),act=all.filter(u=>u.active!==false).length;
+  const shown=all.filter(u=>(U.usF==='all'||(U.usF==='active'?u.active!==false:u.active===false))&&(!q||(u.name+' '+u.email+' '+KLBL[u.kind]+' '+(u.p||'')).toLowerCase().includes(q)));
+  let out=head('Users & roles','Add the people who sign in, pick their role, and link them to their name on placements. Use “Viewing as” at the top to try any user.',adm?'<button class="btn pri" data-act="us-new">+ Add user</button>':'<span class="pill">View only</span>')+
+  `<section class="card"><div class="pad row" style="border-bottom:1px solid var(--line);align-items:flex-end">
+    <label class="fld" style="flex:1 1 240px;max-width:360px"><span>Find a user</span><input class="in" id="usq" data-f="usq" type="search" placeholder="Name, email or role" value="${esc(U.usQ)}"></label>
+    <div class="chips">${[['active','Active '+act],['inactive','Inactive '+(all.length-act)],['all','All '+all.length]].map(([k,l])=>`<button class="chip ${U.usF===k?'on':''}" data-act="us-f" data-v="${k}">${l}</button>`).join('')}</div></div>
+  <div class="tbl"><table><thead><tr><th>User</th><th>Role</th><th>Name on placements</th><th>Sees which placements</th><th>Status</th><th>Added</th><th></th></tr></thead><tbody>
+  ${shown.map(u=>{const on=u.active!==false,cur=on&&u.id===role().id;return `<tr class="${cur?'sel':''}${on?'':' ended'}"><td><div class="nm">${esc(u.name)}${cur?' <span class="pill">you</span>':''}</div><div class="sm-t">${u.email?esc(u.email):'<span class="mut">no email yet</span>'}</div></td>
+   <td>${esc(KLBL[u.kind])}</td><td>${SCOPED.includes(u.kind)?esc(u.p||'—'):'<span class="mut">—</span>'}</td><td class="sm-t">${PERMS[u.kind].scope}</td>
+   <td>${on?'<span class="pill good">Active</span>':'<span class="pill">Inactive</span>'}</td><td class="sm-t">${u.added?fd(u.added):'Set up'}</td>
+   <td style="white-space:nowrap">${on?`<button class="btn sm" data-act="as" data-v="${esc(u.id)}">View as</button> `:''}${adm?`<button class="btn sm" data-act="us-edit" data-v="${esc(u.id)}">Edit</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="7" class="empty">No users match.</td></tr>'}
+  </tbody></table></div></section>
+  <h2 style="font-size:16px;margin:22px 0 8px">What each role can do</h2>
+  <section class="card tbl"><table><thead><tr><th>Role</th><th>Users</th><th>Sees which placements</th><th>Menu</th><th>Bill rates</th><th>Pay rates</th><th>Margin</th><th>Can change</th></tr></thead><tbody>
+  ${KINDS.map(([k,l])=>{const p=PERMS[k];const can=[p.editCands&&'candidates',p.editHours&&'hours',p.editPay&&'payments',p.editClients&&'clients',p.approve&&'approve commission',k==='admin'&&'users'].filter(Boolean).join(', ')||'nothing';const n=all.filter(u=>u.kind===k&&u.active!==false).length;
+   return `<tr><td class="nm">${esc(l)}</td><td class="n">${n}</td><td>${p.scope}</td><td class="sm-t">${p.nav.map(n=>NAVLBL[n]).join(', ')}</td><td>${p.bill?yes:no}</td><td>${p.pay?yes:no}</td><td>${p.margin?yes:no}</td><td class="sm-t">${can}</td></tr>`}).join('')}
   </tbody></table></section>
-  <div class="note">Access follows the names on each placement (DM, Sales Director, Sales Lead, Delivery Lead, Recruiter). When someone leaves, an admin reassigns their placements instead of typing “Gone”.</div>`;
+  <div class="note">Access follows the names on each placement (DM, Sales Director, Sales Lead, Delivery Lead, Recruiter). When someone leaves, mark them inactive and reassign their placements instead of typing “Gone”.</div>`;
+  if(adm&&U.usEd)out+=usDrawer();
+  return out;
 };
+function plNames(){const s=new Set();S.cands.forEach(c=>[c.dm,c.sd,c.sl,c.dl,c.rec].forEach(n=>{if(n&&n!=='Gone')s.add(n)}));return [...s].sort()}
+function usDrawer(){
+  const isNew=U.usEd==='new',u=U.usDraft||(isNew?{name:'',email:'',kind:'rec',p:'',active:true}:S.users.find(x=>x.id===U.usEd)),e=U.usErr||{};if(!u)return '';
+  const er=k=>e[k]?`<span class="err">${e[k]}</span>`:'',sc=SCOPED.includes(u.kind),self=!isNew&&u.id===role().id;
+  return `<div class="dr-bg" data-act="us-close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-t">
+  <div class="dr-h"><div><div class="sm-t">Users & roles</div><h2 id="dr-t">${isNew?'Add user':'Edit · '+esc(u.name)}</h2></div><button class="btn sm" data-act="us-close" aria-label="Close">✕ Close</button></div>
+  <form id="usf" class="dr-b" novalidate>
+   <div class="sm-t">Fields marked <b class="req">*</b> are required.</div>
+   <section class="card csec"><h3>Person</h3><div class="formgrid">
+    <label class="fld"><span>Full name${RQ_}</span><input class="in" id="usf-name" value="${esc(u.name)}" autocomplete="off">${er('name')}</label>
+    <label class="fld"><span>Work email${RQ_}</span><input class="in" id="usf-email" type="email" value="${esc(u.email||'')}" placeholder="name@company.com" autocomplete="off">${er('email')}</label></div></section>
+   <section class="card csec"><h3>Access</h3><div class="formgrid">
+    <label class="fld"><span>Role${RQ_}</span><select class="in" id="usf-kind" data-f="uskind" ${self?'disabled':''}>${KINDS.map(([k,l])=>`<option value="${k}" ${k===u.kind?'selected':''}>${l}</option>`).join('')}</select>${self?'<span class="sm-t">You can\'t change your own role.</span>':''}</label>
+    ${sc?`<label class="fld"><span>Name on placements${RQ_}</span><input class="in" id="usf-p" list="usf-pl" value="${esc(u.p||'')}" placeholder="Pick or type a name"><datalist id="usf-pl">${plNames().map(n=>`<option value="${esc(n)}">`).join('')}</datalist>${er('p')}</label>`:''}</div>
+    <div class="sm-t" style="margin-top:8px"><b>Sees:</b> ${PERMS[u.kind].scope}. <b>Menu:</b> ${PERMS[u.kind].nav.map(n=>NAVLBL[n]).join(', ')}.${sc?' They only see placements where this name is filled in as '+(u.kind==='dm'?'the DM':u.kind==='sd'?'the Sales Director':u.kind==='lead'?'Sales Lead, Delivery Lead or Recruiter':'the Recruiter or Delivery Lead')+'.':''}</div></section>
+   ${isNew?'':`<section class="card csec"><h3>Status</h3><label class="row" style="gap:8px"><input type="checkbox" id="usf-active" ${u.active!==false?'checked':''} ${self?'disabled':''}> <span>Active — can sign in</span></label>${self?'<div class="sm-t">You can\'t deactivate the user you are viewing as.</div>':''}${er('active')}</section>`}
+   <div class="row"><button class="btn pri" type="submit">${isNew?'Add user':'Save changes'}</button><button class="btn" type="button" data-act="us-close">Cancel</button>${Object.keys(e).length?'<span class="err">Fix the fields marked in red.</span>':''}</div>
+  </form></aside>`;
+}
+function usRead(){const g=k=>document.getElementById('usf-'+k),v=k=>g(k)?g(k).value.trim():'';const isNew=U.usEd==='new',old=isNew?{}:S.users.find(x=>x.id===U.usEd)||{};
+  return {name:v('name').replace(/\s+/g,' '),email:v('email').toLowerCase(),kind:g('kind')&&!g('kind').disabled?g('kind').value:(old.kind||'rec'),p:g('p')?v('p').replace(/\s+/g,' '):(old.p||''),active:g('active')?g('active').checked:(isNew?true:old.active!==false)}}
+function saveUser(){
+  const isNew=U.usEd==='new',o=usRead(),e={};
+  if(!o.name)e.name='Enter the person\'s name';
+  if(!o.email)e.email='Enter a work email';else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email))e.email='This doesn\'t look like an email';
+  else if(S.users.some(u=>u.id!==U.usEd&&u.email.toLowerCase()===o.email))e.email='Another user already has this email';
+  if(SCOPED.includes(o.kind)&&!o.p)e.p='Needed so the app knows which placements they see';
+  const admins=S.users.filter(u=>u.id!==U.usEd&&u.kind==='admin'&&u.active!==false).length;
+  if(!isNew&&!admins&&(o.kind!=='admin'||!o.active))e.active='Keep at least one active admin';
+  if(Object.keys(e).length){U.usErr=e;U.usDraft=Object.assign({},o,{id:U.usEd});render();return}
+  if(isNew)S.users.push(Object.assign(o,{id:'u'+Date.now().toString(36),added:ASOF}));
+  else{const u=S.users.find(x=>x.id===U.usEd);const ch=u.name!==o.name||u.kind!==o.kind||u.p!==o.p;Object.assign(u,o);if(ch)delete u.label}
+  save();U.usEd=null;U.usErr=null;U.usDraft=null;render();
+}
 
 /* ---------- render + events ---------- */
 function render(){
@@ -950,7 +1003,7 @@ function render(){
   L=allLines().filter(l=>inScope(l.c));
   const miss=pm.nav.includes('timesheets')?activeIn(LAST_WK).filter(c=>!hasHours(c.name,LAST_WK)).length:0;
   document.getElementById('nav').innerHTML=pm.nav.map(n=>`<a href="#${n}" class="${n===route?'on':''}" ${n===route?'aria-current="page"':''}><span>${NAVLBL[n]}</span>${n==='timesheets'&&miss?`<span class="cnt">${miss}</span>`:''}</a>`).join('');
-  document.getElementById('role').innerHTML=ROLES.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${esc(x.label)}</option>`).join('');
+  document.getElementById('role').innerHTML=roles().map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${esc(x.label)}</option>`).join('');
   document.getElementById('scope').textContent=pm.scope;
   document.getElementById('view').innerHTML=V[route]();
   document.documentElement.classList.toggle('noscroll',!!document.querySelector('.drawer'));
@@ -991,16 +1044,21 @@ const ACT={
   'cm-step':d=>{const r=role();let dt=commission(U.mon);if(['rec','lead'].includes(r.kind))dt=dt.filter(x=>x.R===r.p);const ns=dt.map(x=>x.R),i=ns.indexOf(U.cmSel)+(+d.d);if(ns[i]){U.cmSel=ns[i];U.cmF='all';render()}},
   'comm-lock':()=>{S.locks['comm|'+U.mon]=true;save();render()},
   'rep':d=>{U.rep=d.v;render()},
+  'us-new':()=>{U.usEd='new';U.usErr=null;U.usDraft=null;render();const i=document.getElementById('usf-name');if(i)i.focus()},
+  'us-edit':d=>{U.usEd=d.v;U.usErr=null;U.usDraft=null;render()},
+  'us-close':()=>{U.usEd=null;U.usErr=null;U.usDraft=null;render()},
+  'us-f':d=>{U.usF=d.v;render()},
   'as':d=>{S.role=d.v;save();render();window.scrollTo(0,0)},
-  'reset':()=>{if(!U.confirmReset){U.confirmReset=true;render();setTimeout(()=>{U.confirmReset=false;render()},4000);return}const r=S.role;S=fresh();S.role=r;reC();seedHistory();U.confirmReset=false;save();render()}
+  'reset':()=>{if(!U.confirmReset){U.confirmReset=true;render();setTimeout(()=>{U.confirmReset=false;render()},4000);return}const r=S.role;S=fresh();ensureUsers();S.role=roles().some(x=>x.id===r)?r:'admin';reC();seedHistory();U.confirmReset=false;save();render()}
 };
 if(typeof document!=='undefined'){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(f){e.preventDefault();f(b.dataset,b)}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(U.invDr||U.fteDr||U.pyDr||U.cmDr||U.clEd)){U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();return}if((e.key==='Enter'||e.key===' ')&&e.target.matches('.li[data-act]')){e.preventDefault();ACT[e.target.dataset.act](e.target.dataset)}});
-document.addEventListener('submit',e=>{if(e.target.id==='candf'){e.preventDefault();saveCand();return}if(e.target.id==='clf'){e.preventDefault();saveClient();return}if(e.target.id!=='payf')return;e.preventDefault();const t=S.ts[U.arSel];if(!t)return;const amt=parseFloat(document.getElementById('pay-amt').value);if(!(amt>=0))return;t.rcvd={date:document.getElementById('pay-date').value||ASOF,amt,note:document.getElementById('pay-note').value};save();U.arSel=null;render()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(U.invDr||U.fteDr||U.pyDr||U.cmDr||U.clEd||U.usEd)){U.usEd=null;U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();return}if((e.key==='Enter'||e.key===' ')&&e.target.matches('.li[data-act]')){e.preventDefault();ACT[e.target.dataset.act](e.target.dataset)}});
+document.addEventListener('submit',e=>{if(e.target.id==='candf'){e.preventDefault();saveCand();return}if(e.target.id==='clf'){e.preventDefault();saveClient();return}if(e.target.id==='usf'){e.preventDefault();saveUser();return}if(e.target.id!=='payf')return;e.preventDefault();const t=S.ts[U.arSel];if(!t)return;const amt=parseFloat(document.getElementById('pay-amt').value);if(!(amt>=0))return;t.rcvd={date:document.getElementById('pay-date').value||ASOF,amt,note:document.getElementById('pay-note').value};save();U.arSel=null;render()});
 document.addEventListener('input',e=>{const el=e.target,f=el.dataset.f;
   if(f==='clq'){U.clQ=el.value;render();const q=document.getElementById('clq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   if(f==='tsq'){U.tsQ=el.value;U.tsSel=null;render();const q=document.getElementById('tsq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  if(f==='usq'){U.usQ=el.value;render();const q=document.getElementById('usq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   if(f==='pyq'){U.pyQ=el.value;render();const q=document.getElementById('pyq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   if(f==='fteq'){U.fteQ=el.value;render();const q=document.getElementById('fteq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   if(f==='invq'){U.invQ=el.value;render();const q=document.getElementById('invq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
@@ -1018,6 +1076,7 @@ document.addEventListener('input',e=>{const el=e.target,f=el.dataset.f;
 document.addEventListener('change',e=>{const el=e.target,f=el.dataset.f;
   if(el.id==='role'){S.role=el.value;save();U.recSel=null;render();return}
   if(f==='wk'){U.wk=el.value;U.tsSel=null;render()}
+  if(f==='uskind'){U.usDraft=Object.assign(usRead(),{id:U.usEd});U.usErr=null;render()}
   if(f==='arc'){U.arC=el.value;render()}
   if(f==='invw'){U.invW=el.value;render()}
   if(f==='payd'){U.payDate=el.value.slice(2);render()}
@@ -1033,7 +1092,7 @@ document.addEventListener('change',e=>{const el=e.target,f=el.dataset.f;
   if(f==='cl'){const v=parseFloat(el.value);if(v>=0){const n=el.dataset.n,k=el.dataset.k;S.clients[n]=Object.assign({},S.clients[n]||{},{[k]:k==='msp'?v/100:v});save()}render()}
   if(f==='h')render();
 });
-window.addEventListener('hashchange',()=>{U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();window.scrollTo(0,0)});
+window.addEventListener('hashchange',()=>{U.usEd=null;U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();window.scrollTo(0,0)});
 seedHistory();save();render();
 }
 </script>
