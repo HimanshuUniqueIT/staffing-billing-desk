@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staffing Billing Desk</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: fixed left menu + scrolling work area; menu becomes a top strip on phones */
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#15212b; --muted:#56636f; --line:#dbe1e6; --soft:#eef2f5;
+  --accent:#1c5d8a; --accent-ink:#ffffff; --accent-soft:#e2edf6;
+  --good:#1d7447; --good-bg:#e3f3ea; --warn:#8a5300; --warn-bg:#fbefd9; --bad:#b0281d; --bad-bg:#fbe5e2;
+  --bar:#7fa9c9; --gl:#e3e8ec;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --f-head:"Space Grotesk","Inter",system-ui,sans-serif;
+}
+:root{color-scheme:light}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+*{box-sizing:border-box}
+h1,h2,h3{font-family:var(--f-head);font-weight:600;margin:0;text-wrap:balance}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.app{display:flex;min-height:100%}
+.side{flex:0 0 232px;background:var(--panel);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;gap:10px;align-items:center;padding:2px 8px}
+.mark{width:30px;height:30px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--f-head);font-weight:600;font-size:14px}
+.brand b{font-family:var(--f-head);font-size:16px}
+.brand small{display:block;color:var(--muted);font-size:11.5px}
+#nav{display:flex;flex-direction:column;gap:2px}
+#nav a{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:7px;color:var(--ink);text-decoration:none;font-size:14px}
+#nav a:hover{background:var(--soft)}
+#nav a.on{background:var(--accent-soft);color:var(--ink);font-weight:600}
+#nav .cnt{font-size:11.5px;background:var(--bad-bg);color:var(--bad);border-radius:99px;padding:1px 7px;font-weight:600}
+.mainwrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-block:14px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.top .who{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top label{font-size:12px;color:var(--muted)}
+main{padding-block:22px 48px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px;min-width:0}
+.head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.head h1{font-size:26px}
+.head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.split{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.split>.wide{flex:3 1 560px;min-width:0}
+.split>.narrow{flex:1 1 280px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.pad{padding:16px}
+.tile{padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.tile .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tile .val{font-family:var(--f-head);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile .sub{font-size:12.5px;color:var(--muted)}
+.tile.alert{border-color:var(--bad)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:7px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:13.5px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.sm{min-height:30px;padding:0 10px;font-size:12.5px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.in,select.in{min-height:36px;border:1px solid var(--line);border-radius:7px;padding:0 10px;background:var(--panel);width:100%}
+.in.h{width:64px;text-align:right;padding:0 8px;min-height:32px;font-variant-numeric:tabular-nums}
+.in.h[readonly]{background:var(--soft);border-color:transparent}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld>span{font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto}
+.clist td{padding:10px 12px}.sm1{font-size:12px;margin-top:2px}.clist tr.ended td{color:var(--muted)}.lowm{color:var(--bad)}.crumbs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px;margin-bottom:-4px}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}.terms>div{background:var(--soft);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.terms span,.terms small{color:var(--muted);font-size:12px}.terms b{font-size:18px;font-variant-numeric:tabular-nums}
+.steps{display:flex;flex-direction:column;gap:14px}.step{display:flex;gap:12px;align-items:flex-start;line-height:1.55}.step>div{flex:1;min-width:0}.step .no{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:600;font-size:13px}
+table.calc{width:auto;min-width:min(100%,520px)}
+.sum{margin-top:8px;max-width:520px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.sum>div{display:flex;justify-content:space-between;gap:12px;padding:7px 12px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}.sum>div:last-child{border-bottom:0}.sum .tot{background:var(--accent-soft)}
+.calcc{line-height:1.6;font-variant-numeric:tabular-nums;white-space:nowrap}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px 18px}.facts>div{display:flex;flex-direction:column;gap:3px}.facts span{font-size:12px;color:var(--muted)}.facts small{font-size:11.5px;color:var(--muted)}
+.csec{padding:16px}.csec h3{font-size:15px;margin-bottom:8px}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px;align-items:start}
+.cr{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,1.6fr) auto;gap:4px 12px;padding:7px 0;border-bottom:1px solid var(--line);align-items:baseline;font-variant-numeric:tabular-nums}
+.cr:last-child{border-bottom:0}.cr .l{font-weight:500}.cr .h{color:var(--muted);font-size:12.5px}.cr b{text-align:right;white-space:nowrap}
+.cr.zero{opacity:.45}.cr.tot{background:var(--soft);margin:2px -8px;padding:8px;border-radius:6px;border-bottom:0}.cr.tot.good b{color:var(--good)}
+.wnote{margin-top:10px;font-size:12.5px;color:var(--warn);background:var(--warn-bg);padding:8px 10px;border-radius:6px}
+.wkbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+@media (max-width:560px){.cr{grid-template-columns:1fr auto}.cr .h{grid-column:1/-1;order:3}}
+.dr-bg{position:fixed;inset:0;background:rgba(15,25,35,.35);z-index:40;animation:fd .15s}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);max-width:100%;box-sizing:border-box;background:var(--bg);z-index:41;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18);animation:sl .2s ease-out}
+.dr-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 18px;background:var(--panel);border-bottom:1px solid var(--line)}.dr-h h2{font-size:19px}
+.dr-nav{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+.dr-b{flex:1;overflow:auto;padding:16px 18px 28px;display:flex;flex-direction:column;gap:14px}
+@keyframes sl{from{transform:translateX(40px);opacity:0}}@keyframes fd{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.drawer,.dr-bg{animation:none}}
+.tabs .chip{padding:7px 16px;font-size:13.5px}
+.ptab table{font-size:12.5px}.ptab th{white-space:normal;min-width:62px;vertical-align:bottom;line-height:1.2}
+.ptab td{padding:6px 8px;white-space:nowrap}.ptab tr.wkr td{border-bottom:1px dashed var(--line)}.ptab tr.ptot td{background:var(--soft);border-bottom:2px solid var(--line)}
+.ptab .z{color:var(--muted);opacity:.55}.ptab th:nth-child(2),.ptab td:nth-child(2){position:sticky;left:0;background:var(--panel);z-index:1}.ptab tr.ptot td:nth-child(2){background:var(--soft)}.ptab th:nth-child(2){z-index:3}
+.pdbar{display:flex;flex-wrap:wrap;gap:12px 32px;background:var(--accent-soft);border-radius:8px;padding:10px 14px}.pdbar>div{display:flex;flex-direction:column;gap:2px}.pdbar b{font-size:15px}
+.drawer.wide-dr{width:min(820px,100%)}
+.mgrid td,.mgrid th{text-align:center}.mgrid td.hit{background:var(--good-bg);color:var(--good);font-weight:700;outline:2px solid var(--good);outline-offset:-2px}
+.bandrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.bandtot{background:var(--accent-soft)!important;border:1px solid var(--accent)}.bandwk{background:var(--soft);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.cmtab th:nth-child(1),.cmtab td:nth-child(1){position:sticky;left:0;background:var(--panel);z-index:1}.cmtab th:nth-child(2),.cmtab td:nth-child(2){position:static}.cmtab tr.ptot td:nth-child(1){background:var(--soft)}
+html.noscroll,html.noscroll body{overflow:hidden}
+.drawer .cr{grid-template-columns:1fr auto;gap:2px 16px;padding:9px 0}
+.drawer .cr .l{grid-column:1;grid-row:1}.drawer .cr b{grid-column:2;grid-row:1}.drawer .cr .h{grid-column:1/-1;grid-row:2;text-align:left;font-size:12.5px}
+.drawer .cr .h:empty{display:none}
+.drawer .cr.tot{margin:4px -10px;padding:10px}
+.drawer .csec h3{font-size:15px;padding-bottom:6px;border-bottom:2px solid var(--line);margin-bottom:2px}
+.dr-h,.dr-nav{padding-left:20px;padding-right:20px}.dr-b{padding-left:20px;padding-right:20px}
+.in.h.tsn{width:84px;text-align:left}.in.h.exp{width:76px}.in.h.need{border-color:var(--bad);background:var(--bad-bg)}
+.req{color:var(--bad);font-weight:600}.gainm{color:var(--good)}
+.lnk{background:none;border:0;padding:0;color:var(--accent);font-weight:600;cursor:pointer;text-align:left}
+.lnk:hover{text-decoration:underline}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--panel);position:sticky;top:0}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tfoot td{font-weight:600;border-bottom:0;border-top:2px solid var(--line)}
+tr.sel td{background:var(--accent-soft)}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--soft)}
+.nm{font-weight:600}
+.sm-t{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--soft);color:var(--muted)}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.kv:last-child{border-bottom:0}
+.kv span:first-child{color:var(--muted)}
+.list{display:flex;flex-direction:column}
+.li{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;align-items:center}
+.li:hover{background:var(--soft)}
+.li.sel{background:var(--accent-soft)}
+.note{border-left:3px solid var(--warn);background:var(--warn-bg);color:var(--ink);padding:10px 12px;border-radius:0 8px 8px 0;font-size:13px}
+.math{font-size:13px;display:flex;flex-direction:column;gap:3px}
+.math div{display:flex;justify-content:space-between;gap:10px}
+.math .tot{border-top:1px solid var(--line);padding-top:4px;font-weight:600}
+.att{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.att:last-child{border-bottom:0}
+.att .pill{flex:0 0 auto}
+.legend{display:flex;gap:16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+svg .gl{stroke:var(--gl)} svg .ax{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+svg .bar{fill:var(--bar)} svg .ln{fill:none;stroke:var(--accent);stroke-width:2.5} svg .dot{fill:var(--accent)}
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block;width:100%;min-width:560px;height:auto}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.chk{display:flex;gap:10px;align-items:center;min-height:34px;font-size:13.5px}
+.chk input{width:18px;height:18px}
+.lock{font-size:12.5px;color:var(--good);font-weight:600}
+.mut{color:var(--muted)}
+.err{color:var(--bad);font-size:12px;font-weight:600}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.fsec{display:flex;flex-direction:column;gap:10px}
+.fsec h3{font-size:15px}
+@media (max-width:820px){
+  .app{flex-direction:column}
+  .side{position:static;height:auto;flex:0 0 auto;border-right:0;border-bottom:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  #nav{flex-direction:row;overflow-x:auto;gap:4px}
+  #nav a{white-space:nowrap}
+  .top,main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="mark" aria-hidden="true">SB</div><div><b>Billing Desk</b><small>Contract staffing · 2026</small></div></div>
+    <nav id="nav" aria-label="Main menu"></nav>
+  </aside>
+  <div class="mainwrap">
+    <header class="top">
+      <div class="who">
+        <label for="role">Viewing as</label>
+        <select id="role" class="in" style="width:auto;min-width:240px"></select>
+        <span class="pill info" id="scope"></span>
+      </div>
+      <div class="row"><span class="sm-t">Data as of <b>Jul 14, 2026</b> (workbook date)</span><button class="btn sm" data-act="reset">Reset demo data</button></div>
+    </header>
+    <main id="view"></main>
+  </div>
+</div>
+
+<script>
+const D={"cands":[{"name":"Andrew Paulson","start":"2025-12-11","end":null,"dm":"Nathan","sd":"John","sl":"Gone","dl":"Abhinav","rec":"Abhinav","state":"PA","wc":8810,"client":"AON","pt":"W2","dept":"1903 - PA1887- IT Lead","title":"1903 - PA1887- IT Lead","bST":138,"bOT":207,"bHol":0,"bOn":0,"bCb":0,"pST":95,"pOT":142.5,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Anjali Puri","start":"2021-04-01","end":null,"dm":"Nathan","sd":"John","sl":"Gone","dl":"Gone","rec":"Gone","state":"IL","wc":8803,"client":"TDK","pt":"CTOC","dept":"CTOC","title":"CTOC","bST":110,"bOT":110,"bHol":0,"bOn":0,"bCb":0,"pST":84,"pOT":84,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Barbara Tibbs","start":"2026-01-15","end":"2026-01-30","dm":"Nathan","sd":"John","sl":"Gone","dl":"Ravi","rec":"Ritika","state":"","wc":"","client":"MEDEFIS","pt":"W2","dept":"1071 - PA 2957- Travel History Tech","title":"1071 - PA 2957- Travel History Tech","bST":70,"bOT":80,"bHol":105,"bOn":0,"bCb":0,"pST":15.35,"pOT":23.03,"pHol":0,"pOn":0,"pCb":0,"stip":34.65,"weekly":true},{"name":"Becki Hall","start":"2024-01-29","end":"2026-01-30","dm":"Nathan","sd":"John","sl":"Gone","dl":"Gone","rec":"Gone","state":"CA","wc":8871,"client":"KEYSIGHT","pt":"W2","dept":"1043 - CA8871- Manufacturing Operations Support","title":"1043 - CA8871- Manufacturing Operations Support","bST":33.81,"bOT":50.72,"bHol":0,"bOn":0,"bCb":0,"pST":24.5,"pOT":36.5,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Brian A Forde","start":"2025-05-19","end":null,"dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Monu","state":"NY","wc":"","client":"WLTW","pt":"W2","dept":"1062 - NY8810-Project Manager","title":"1062 - NY8810-Project Manager","bST":76.6,"bOT":76.6,"bHol":0,"bOn":0,"bCb":0,"pST":53,"pOT":53,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Cayla Polk","start":"2025-06-25","end":"2026-06-30","dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Bhupendra","state":"TN","wc":8810,"client":"St of TN","pt":"W2","dept":"1052 - TN8810 - Admin","title":"1052 - TN8810 - Admin","bST":40,"bOT":40,"bHol":0,"bOn":0,"bCb":0,"pST":22,"pOT":0,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Ian Patrick McGuire","start":"2026-01-05","end":"2026-01-11","dm":"Nathan","sd":"John","sl":"Gone","dl":"Gone","rec":"Gone","state":"IL","wc":8810,"client":"TDK","pt":"W2","dept":"1024 - IL8810 - Intern","title":"1024 - IL8810 - Intern","bST":31.75,"bOT":47.63,"bHol":0,"bOn":0,"bCb":0,"pST":25,"pOT":37.5,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Janzen D Derayal","start":"2025-07-15","end":null,"dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Abhinav","state":"CA","wc":8810,"client":"Yum","pt":"W2","dept":"1065 - CA8871 IT HELP DESK","title":"1065 - CA8871 IT HELP DESK","bST":34,"bOT":51,"bHol":0,"bOn":0,"bCb":0,"pST":24,"pOT":36,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Karena Pavon","start":"2025-07-14","end":null,"dm":"Nathan","sd":"John","sl":"Gone","dl":"Gone","rec":"Gone","state":"CA","wc":8810,"client":"ULTA","pt":"W2","dept":"500 - CA8810 - Product Designer","title":"500 - CA8810 - Product Designer","bST":88,"bOT":88,"bHol":0,"bOn":0,"bCb":0,"pST":60,"pOT":60,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Kathleen Holroyd","start":"2025-01-01","end":null,"dm":"Nathan","sd":"John","sl":"Gone","dl":"Gone","rec":"Gone","state":"CT","wc":8810,"client":"St of CT","pt":"W2","dept":"1019 - CT8810 - Web Content Designer","title":"1019 - CT8810 - Web Content Designer","bST":91,"bOT":91,"bHol":0,"bOn":0,"bCb":0,"pST":70,"pOT":0,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Kecia L Booker","start":"2023-05-30","end":null,"dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Abhinav","state":"TN","wc":8820,"client":"St of TN","pt":"W2","dept":"1052 - TN8810 - Admin","title":"1052 - TN8810 - Admin","bST":28.45,"bOT":28.45,"bHol":0,"bOn":0,"bCb":0,"pST":19,"pOT":28.5,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Lee Jeffries","start":"2025-12-22","end":null,"dm":"Nathan","sd":"John","sl":"Gone","dl":"Abhinav","rec":"Gone","state":"MN","wc":8810,"client":"Abbott","pt":"W2","dept":"1069 - MN-8810 Sr Quality Tech","title":"1069 - MN-8810 Sr Quality Tech","bST":64.99,"bOT":90.34,"bHol":0,"bOn":0,"bCb":0,"pST":44,"pOT":66,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Lindsay Hoegg","start":"2025-09-03","end":"2026-03-06","dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Abhinav","state":"IL","wc":"","client":"SCJ","pt":"W2","dept":"1020 - IL8871 - Media Solutions Specialist","title":"1020 - IL8871 - Media Solutions Specialist","bST":66.95,"bOT":91.14,"bHol":0,"bOn":0,"bCb":0,"pST":42,"pOT":63,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Megan Belcher","start":"2025-11-25","end":"2026-06-04","dm":"Nathan","sd":"John","sl":"Gone","dl":"Ravi","rec":"Ravi","state":"CO","wc":"","client":"MEDEFIS","pt":"W2","dept":"1063 - CO8810 Lab Tech","title":"1063 - CO8810 Lab Tech","bST":81,"bOT":91,"bHol":91,"bOn":5,"bCb":86,"pST":28.85,"pOT":43.28,"pHol":0,"pOn":3.91,"pCb":0,"stip":31.15,"weekly":true},{"name":"Michael Johnson","start":"2024-06-18","end":null,"dm":"Nathan","sd":"John","sl":"Gone","dl":"Gone","rec":"Abhinav","state":"MI","wc":8810,"client":"DTE","pt":"W2","dept":"1050 - MI8810- Project Manager III","title":"1050 - MI8810- Project Manager III","bST":112.42,"bOT":112.42,"bHol":0,"bOn":0,"bCb":0,"pST":77,"pOT":0,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Michael Jordan","start":"2025-10-28","end":null,"dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Bhupendra","state":"TN","wc":8810,"client":"St of TN","pt":"W2","dept":"1068 - TN8810- BA","title":"1068 - TN8810- BA","bST":74.4,"bOT":74.4,"bHol":0,"bOn":0,"bCb":0,"pST":48,"pOT":48,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Mutturaj Janakar","start":"2025-06-01","end":null,"dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Gone","state":"IND","wc":"","client":"Opentext","pt":"CTOC","dept":"CTOC","title":"CTOC","bST":6.75,"bOT":0,"bHol":0,"bOn":0,"bCb":0,"pST":5.18,"pOT":0,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false},{"name":"Naru Reddy","start":"2025-08-18","end":null,"dm":"Nathan","sd":"John","sl":"Bidya","dl":"Gone","rec":"Gone","state":"IND","wc":"","client":"Yum","pt":"CTOC","dept":"CTOC","title":"CTOC","bST":21.62,"bOT":32.43,"bHol":0,"bOn":0,"bCb":0,"pST":13.75,"pOT":0,"pHol":0,"pOn":0,"pCb":0,"stip":0,"weekly":false}],"clients":[{"name":"MPG","msp":0.03,"otx":1.4,"dtx":1.7,"terms":45,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"JDC","msp":0.0242,"otx":1.35,"dtx":1.75,"terms":90,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"WLTW","msp":0.0275,"otx":1.35,"dtx":1.8,"terms":35,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"JCI","msp":0.024,"otx":1.35,"dtx":1.65,"terms":90,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"SOL","msp":0,"otx":1,"dtx":1,"terms":40,"scomm":0,"pOTx":1,"pDTx":1},{"name":"CIGNA","msp":0.02,"otx":1,"dtx":1,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"AmeriGas","msp":0.0245,"otx":0,"dtx":0,"terms":60,"scomm":0,"pOTx":0,"pDTx":0},{"name":"Eisenhower","msp":0.065,"otx":1.5,"dtx":2,"terms":50,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"EXPD","msp":0.025,"otx":1.25,"dtx":1,"terms":50,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"FERMI","msp":0,"otx":1.5,"dtx":2,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"SCJ","msp":0.0285,"otx":1.4,"dtx":1.85,"terms":90,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"INTR","msp":0,"otx":1,"dtx":1,"terms":10,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"WWLP","msp":0,"otx":1.5,"dtx":2,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"CHOP","msp":0.03,"otx":1.5,"dtx":0,"terms":30,"scomm":0,"pOTx":1,"pDTx":2},{"name":"Abbott","msp":0.025,"otx":1,"dtx":1,"terms":120,"scomm":0,"pOTx":1,"pDTx":1},{"name":"DTE","msp":0.04,"otx":0,"dtx":0,"terms":40,"scomm":0,"pOTx":1,"pDTx":2},{"name":"ULTA","msp":0.02,"otx":1.5,"dtx":2,"terms":45,"scomm":15,"pOTx":1.5,"pDTx":2},{"name":"AON","msp":0.0275,"otx":0,"dtx":0,"terms":60,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"RCCL","msp":0.02,"otx":0,"dtx":0,"terms":60,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"MEDEFIS","msp":0.0625,"otx":1.3,"dtx":2,"terms":90,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"HITACHI","msp":0.03,"otx":1,"dtx":1,"terms":40,"scomm":15,"pOTx":1,"pDTx":2},{"name":"WALGREENS","msp":0,"otx":1,"dtx":1,"terms":80,"scomm":0,"pOTx":1,"pDTx":1},{"name":"KEYSIGHT","msp":0.025,"otx":1.5,"dtx":2,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"City of Atlanta","msp":0.0277,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"St of GA","msp":0.0077,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"St of TN","msp":0.0175,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"St of CT","msp":0.0112,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"St of OR","msp":0.0085,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"St of CO","msp":0.028,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"NEIU","msp":0,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1,"pDTx":1},{"name":"Yahoo","msp":0.0245,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1,"pDTx":1},{"name":"Opentext","msp":0,"otx":0,"dtx":0,"terms":0,"scomm":0,"pOTx":0,"pDTx":0},{"name":"Yum","msp":0.0265,"otx":1.5,"dtx":2,"terms":60,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"9line","msp":0,"otx":1.5,"dtx":2,"terms":30,"scomm":0,"pOTx":1.5,"pDTx":2},{"name":"Tata","msp":0.03,"otx":0,"dtx":0,"terms":30,"scomm":0,"pOTx":1,"pDTx":1},{"name":"TDK","msp":0,"otx":1,"dtx":1,"terms":40,"scomm":0,"pOTx":1,"pDTx":1}],"cal":{"2025-12-21":"2026-01-09","2025-12-28":"2026-01-09","2026-01-04":"2026-01-23","2026-01-11":"2026-01-23","2026-01-18":"2026-02-06","2026-01-25":"2026-02-06","2026-02-01":"2026-02-20","2026-02-08":"2026-02-20","2026-02-15":"2026-03-06","2026-02-22":"2026-03-06","2026-03-01":"2026-03-20","2026-03-08":"2026-03-20","2026-03-15":"2026-04-03","2026-03-22":"2026-04-03","2026-03-29":"2026-04-17","2026-04-05":"2026-04-17","2026-04-12":"2026-05-01","2026-04-19":"2026-05-01","2026-04-26":"2026-05-15","2026-05-03":"2026-05-15","2026-05-10":"2026-05-29","2026-05-17":"2026-05-29","2026-05-24":"2026-06-12","2026-05-31":"2026-06-12","2026-06-07":"2026-06-26","2026-06-14":"2026-06-26","2026-06-21":"2026-07-10","2026-06-28":"2026-07-10","2026-07-05":"2026-07-24","2026-07-12":"2026-07-24","2026-07-19":"2026-08-07","2026-07-26":"2026-08-07","2026-08-02":"2026-08-21","2026-08-09":"2026-08-21","2026-08-16":"2026-09-04","2026-08-23":"2026-09-04","2026-08-30":"2026-09-18","2026-09-06":"2026-09-18","2026-09-13":"2026-10-02","2026-09-20":"2026-10-02","2026-09-27":"2026-10-16","2026-10-04":"2026-10-16","2026-10-11":"2026-10-30","2026-10-18":"2026-10-30","2026-10-25":"2026-11-13","2026-11-01":"2026-11-13","2026-11-08":"2026-11-27","2026-11-15":"2026-11-27","2026-11-22":"2026-12-11","2026-11-29":"2026-12-11","2026-12-06":"2026-12-25","2026-12-13":"2026-12-25","2026-12-20":"2027-01-08","2026-12-27":"2027-01-08","2027-01-03":"2027-01-22","2027-01-10":"2027-01-22","2027-01-17":"2027-02-05","2027-01-24":"2027-02-05","2027-01-31":"2027-02-19","2027-02-07":"2027-02-19","2027-02-14":"2027-03-05","2027-02-21":"2027-03-05","2027-02-28":"2027-03-19","2027-03-07":"2027-03-19","2027-03-14":"2027-04-02","2027-03-21":"2027-04-02","2027-03-28":"2027-04-16","2027-04-04":"2027-04-16","2027-04-11":"2027-04-30","2027-04-18":"2027-04-30","2027-04-25":"2027-05-14","2027-05-02":"2027-05-14","2027-05-09":"2027-05-28","2027-05-16":"2027-05-28","2027-05-23":"2027-06-11","2027-05-30":"2027-06-11","2027-06-06":"2027-06-25","2027-06-13":"2027-06-25","2027-06-20":"2027-07-09","2027-06-27":"2027-07-09","2027-07-04":"2027-07-23","2027-07-11":"2027-07-23","2027-07-18":"2027-08-06","2027-07-25":"2027-08-06","2027-08-01":"2027-08-20","2027-08-08":"2027-08-20","2027-08-15":"2027-09-03","2027-08-22":"2027-09-03","2027-08-29":"2027-09-17","2027-09-05":"2027-09-17","2027-09-12":"2027-10-01","2027-09-19":"2027-10-01","2027-09-26":"2027-10-15","2027-10-03":"2027-10-15","2027-10-10":"2027-10-29","2027-10-17":"2027-10-29","2027-10-24":"2027-11-12","2027-10-31":"2027-11-12","2027-11-07":"2027-11-26","2027-11-14":"2027-11-26","2027-11-21":"2027-12-10","2027-11-28":"2027-12-10","2027-12-05":"2027-12-24","2027-12-12":"2027-12-24","2027-12-19":"2028-01-07","2027-12-26":"2028-01-07","2028-01-02":"2028-01-21","2028-01-09":"2028-01-21","2028-01-16":"2028-02-04","2028-01-23":"2028-02-04","2028-01-30":"2028-02-18","2028-02-06":"2028-02-18","2028-02-13":"2028-03-03","2028-02-20":"2028-03-03"},"rows":[["Anjali Puri","2026-01-04",24,0,0,0,0,0,0,0,"2026-01-14"],["Becki Hall","2026-01-04",32,4,0,0,0,0,0,0,"2026-02-23"],["Brian A Forde","2026-01-04",32,0,0,0,0,0,0,0,"2026-02-26"],["Cayla Polk","2026-01-04",37.5,0,0,0,0,0,0,0,"2026-01-26"],["Janzen D Derayal","2026-01-04",32,0,0,0,0,0,0,0,"2026-03-05"],["Kathleen Holroyd","2026-01-04",32,0,0,0,0,0,0,0,"2026-02-20"],["Kecia L Booker","2026-01-04",22,0,0,0,0,0,0,0,"2026-02-16"],["Lee Jeffries","2026-01-04",24,0,0,0,0,0,0,0,"2026-04-30"],["Lindsay Hoegg","2026-01-04",24,0,0,0,0,0,0,0,"2026-03-12"],["Megan Belcher","2026-01-04",28.12,0,0,35.25,0,0,0,0,"2026-02-17"],["Michael Johnson","2026-01-04",24,0,0,0,0,0,0,0,"2026-01-20"],["Michael Jordan","2026-01-04",22.5,0,0,0,0,0,0,0,"2026-01-26"],["Naru Reddy","2026-01-04",35,0,0,0,0,0,0,0,"2026-03-05"],["Anjali Puri","2026-01-11",40,0,0,0,0,0,0,0,"2026-02-24"],["Becki Hall","2026-01-11",40,8.5,0,0,0,0,0,0,"2026-02-23"],["Brian A Forde","2026-01-11",40,0,0,0,0,0,0,0,"2026-02-27"],["Cayla Polk","2026-01-11",37.5,0,0,0,0,0,0,0,"2026-02-02"],["Ian Patrick McGuire","2026-01-11",40,13,0,0,0,0,0,0,"2026-02-24"],["Janzen D Derayal","2026-01-11",40,0,0,0,0,0,0,0,"2026-03-16"],["Karena Pavon","2026-01-11",24,0,0,0,0,0,0,0,"2026-02-27"],["Kathleen Holroyd","2026-01-11",32,0,0,0,0,0,0,0,"2026-02-20"],["Kecia L Booker","2026-01-11",37.5,0,0,0,0,0,0,0,"2026-02-26"],["Lee Jeffries","2026-01-11",40,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-01-11",40,0,0,0,0,0,0,0,"2026-03-19"],["Megan Belcher","2026-01-11",40,4.15,0,16.98,0.42,0,0,0,"2026-02-17"],["Michael Johnson","2026-01-11",40,0,0,0,0,0,0,0,"2026-01-23"],["Michael Jordan","2026-01-11",37.5,0,0,0,0,0,0,0,"2026-02-03"],["Naru Reddy","2026-01-11",42,0,0,0,0,0,0,0,"2026-03-16"],["Andrew Paulson","2026-01-11",40,0,0,0,0,0,0,0,"2026-02-25"],["Anjali Puri","2026-01-18",40,0,0,0,0,0,0,0,"2026-02-24"],["Barbara Tibbs","2026-01-18",5,0,0,0,0,0,0,0,"2026-02-24"],["Becki Hall","2026-01-18",8,2,0,0,0,0,0,0,"2026-03-03"],["Brian A Forde","2026-01-18",40,0,0,0,0,0,0,0,"2026-03-04"],["Cayla Polk","2026-01-18",37.5,0,0,0,0,0,0,0,"2026-02-26"],["Janzen D Derayal","2026-01-18",40,0,0,0,0,0,0,0,"2026-03-26"],["Karena Pavon","2026-01-18",40,0,0,0,0,0,0,0,"2026-03-11"],["Kathleen Holroyd","2026-01-18",40,0,0,0,0,0,0,0,"2026-02-20"],["Kecia L Booker","2026-01-18",37.5,0,0,0,0,0,0,0,"2026-03-02"],["Lee Jeffries","2026-01-18",40,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-01-18",40,0,0,0,0,0,0,0,"2026-03-26"],["Megan Belcher","2026-01-18",40,0.27,0,30.73,0,0,0,0,"2026-03-24"],["Michael Johnson","2026-01-18",40,0,0,0,0,0,0,0,"2026-02-03"],["Michael Jordan","2026-01-18",37.5,0,0,0,0,0,0,0,"2026-02-09"],["Naru Reddy","2026-01-18",42,0,0,0,0,0,0,0,"2026-03-26"],["Andrew Paulson","2026-01-18",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-01-25",32,0,0,0,0,0,0,0,"2026-02-24"],["Barbara Tibbs","2026-01-25",34,0,0,0,0,0,0,0,"2026-03-03"],["Becki Hall","2026-01-25",38.5,8,0,0,0,0,0,0,"2026-03-13"],["Brian A Forde","2026-01-25",40,0,0,0,0,0,0,0,"2026-03-11"],["Cayla Polk","2026-01-25",37.5,0,0,0,0,0,0,0,"2026-02-18"],["Janzen D Derayal","2026-01-25",40,0,0,0,0,0,0,0,"2026-04-01"],["Karena Pavon","2026-01-25",40,0,0,0,0,0,0,0,"2026-03-13"],["Kathleen Holroyd","2026-01-25",32,0,0,0,0,0,0,0,"2026-02-20"],["Kecia L Booker","2026-01-25",30,0,0,0,0,0,0,0,"2026-04-17"],["Lee Jeffries","2026-01-25",32,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-01-25",40,0,0,0,0,0,0,0,"2026-03-31"],["Megan Belcher","2026-01-25",39.48,0,0,0,0,0,0,0,"2026-03-24"],["Michael Johnson","2026-01-25",40,0,0,0,0,0,0,0,"2026-03-02"],["Michael Jordan","2026-01-25",30,0,0,0,0,0,0,0,"2026-02-18"],["Naru Reddy","2026-01-25",34,0,0,0,0,0,0,0,"2026-04-09"],["Andrew Paulson","2026-01-25",34,0,0,0,0,0,0,0,null],["Anjali Puri","2026-02-01",40,0,0,0,0,0,0,0,"2026-03-10"],["Barbara Tibbs","2026-02-01",5.75,0,0,0,0,0,0,0,null],["Becki Hall","2026-02-01",40,10,0,0,0,0,0,0,"2026-03-13"],["Brian A Forde","2026-02-01",40,0,0,0,0,0,0,0,"2026-03-27"],["Cayla Polk","2026-02-01",37.5,0,0,0,0,0,0,0,"2026-02-25"],["Janzen D Derayal","2026-02-01",35,0,0,0,0,0,0,0,"2026-04-09"],["Karena Pavon","2026-02-01",40,0,0,0,0,0,0,0,"2026-03-13"],["Kathleen Holroyd","2026-02-01",32,0,0,0,0,0,0,0,"2026-03-19"],["Kecia L Booker","2026-02-01",37.5,0,0,0,0,0,0,0,"2026-03-26"],["Lee Jeffries","2026-02-01",24,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-02-01",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-02-01",39.45,0,0,0,0,0,0,0,"2026-03-24"],["Michael Jordan","2026-02-01",34,0,0,0,0,0,0,0,"2026-03-09"],["Naru Reddy","2026-02-01",42,0,0,0,0,0,0,0,"2026-04-09"],["Andrew Paulson","2026-02-01",40,0,0,0,0,0,0,0,"2026-03-11"],["Anjali Puri","2026-02-08",40,0,0,0,0,0,0,0,"2026-03-10"],["Brian A Forde","2026-02-08",40,0,0,0,0,0,0,0,"2026-04-08"],["Cayla Polk","2026-02-08",37.5,0,0,0,0,0,0,0,"2026-03-02"],["Janzen D Derayal","2026-02-08",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-02-08",40,0,0,0,0,0,0,0,"2026-03-27"],["Kathleen Holroyd","2026-02-08",40,0,0,0,0,0,0,0,"2026-03-19"],["Kecia L Booker","2026-02-08",37.5,0,0,0,0,0,0,0,"2026-03-31"],["Lee Jeffries","2026-02-08",40,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-02-08",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-02-08",29.97,0,0,11.75,2,0,0,0,"2026-03-24"],["Michael Jordan","2026-02-08",37.5,0,0,0,0,0,0,0,"2026-03-05"],["Naru Reddy","2026-02-08",40,1,0,0,0,0,0,0,null],["Andrew Paulson","2026-02-08",40,0,0,0,0,0,0,0,"2026-03-26"],["Anjali Puri","2026-02-15",40,0,0,0,0,0,0,0,"2026-03-10"],["Brian A Forde","2026-02-15",40,6,0,0,0,0,0,0,"2026-04-08"],["Cayla Polk","2026-02-15",37.5,0,0,0,0,0,0,0,"2026-03-05"],["Janzen D Derayal","2026-02-15",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-02-15",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-02-15",24,0,0,0,0,0,0,0,"2026-03-19"],["Kecia L Booker","2026-02-15",37.5,0,0,0,0,0,0,0,"2026-04-13"],["Lee Jeffries","2026-02-15",40,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-02-15",28,0,0,0,0,0,0,0,null],["Megan Belcher","2026-02-15",39.7,0,0,11.75,2,0,0,0,null],["Michael Johnson","2026-02-15",40,0,0,0,0,0,0,0,"2026-03-02"],["Michael Jordan","2026-02-15",30,0,0,0,0,0,0,0,"2026-03-11"],["Naru Reddy","2026-02-15",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-02-15",40,0,0,0,0,0,0,0,"2026-03-26"],["Anjali Puri","2026-02-22",32,0,0,0,0,0,0,0,"2026-03-10"],["Brian A Forde","2026-02-22",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-02-22",37.25,0,0,0,0,0,0,0,"2026-03-13"],["Janzen D Derayal","2026-02-22",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-02-22",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-02-22",32,0,0,0,0,0,0,0,"2026-03-19"],["Kecia L Booker","2026-02-22",29.83,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-02-22",24,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-02-22",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-02-22",39.92,0,0,0,0,0,0,0,"2026-04-14"],["Michael Johnson","2026-02-22",40,0,0,0,0,0,0,0,"2026-03-04"],["Michael Jordan","2026-02-22",30,0,0,0,0,0,0,0,"2026-03-18"],["Naru Reddy","2026-02-22",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-02-22",40,0,0,0,0,0,0,0,"2026-04-01"],["Anjali Puri","2026-03-01",40,0,0,0,0,0,0,0,"2026-04-07"],["Brian A Forde","2026-03-01",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-03-01",34.5,0,0,0,0,0,0,0,"2026-03-23"],["Janzen D Derayal","2026-03-01",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-03-01",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-03-01",40,0,0,0,0,0,0,0,"2026-03-19"],["Kecia L Booker","2026-03-01",36.83,0,0,0,0,0,0,0,"2026-04-27"],["Lee Jeffries","2026-03-01",40,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-03-01",40,0,0,0,0,0,0,0,null],["Michael Johnson","2026-03-01",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-03-01",37.5,0,0,0,0,0,0,0,null],["Naru Reddy","2026-03-01",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-03-01",40,0,0,0,0,0,0,0,"2026-04-01"],["Anjali Puri","2026-03-08",40,0,0,0,0,0,0,0,"2026-04-07"],["Brian A Forde","2026-03-08",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-03-08",40,0.5,0,0,0,0,0,0,"2026-04-06"],["Janzen D Derayal","2026-03-08",40,1,0,0,0,0,0,0,null],["Karena Pavon","2026-03-08",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-03-08",40,0,0,0,0,0,0,0,"2026-04-17"],["Kecia L Booker","2026-03-08",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-03-08",32,0,0,0,0,0,0,0,null],["Lindsay Hoegg","2026-03-08",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-03-08",40,0.26,0,0,0,0,0,0,"2026-04-29"],["Michael Johnson","2026-03-08",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-03-08",37.5,0,0,0,0,0,0,0,"2026-04-06"],["Naru Reddy","2026-03-08",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-03-08",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-03-15",40,0,0,0,0,0,0,0,"2026-04-07"],["Brian A Forde","2026-03-15",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-03-15",37.5,0,0,0,0,0,0,0,"2026-04-23"],["Janzen D Derayal","2026-03-15",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-03-15",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-03-15",40,0,0,0,0,0,0,0,"2026-04-17"],["Kecia L Booker","2026-03-15",37.17,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-03-15",38.5,0,0,0,0,0,0,0,null],["Megan Belcher","2026-03-15",39.11,0,0,0,0,0,0,0,"2026-05-05"],["Michael Johnson","2026-03-15",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-03-15",37.5,0,0,0,0,0,0,0,"2026-04-06"],["Naru Reddy","2026-03-15",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-03-15",40,0,0,0,0,0,0,0,"2026-04-22"],["Anjali Puri","2026-03-22",40,0,0,0,0,0,0,0,"2026-04-07"],["Brian A Forde","2026-03-22",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-03-22",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-03-22",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-03-22",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-03-22",40,0,0,0,0,0,0,0,"2026-04-17"],["Kecia L Booker","2026-03-22",22.5,0,0,0,0,0,0,0,null],["Megan Belcher","2026-03-22",39.26,0,0,0,0,0,0,0,"2026-04-29"],["Michael Johnson","2026-03-22",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-03-22",37.5,0,0,0,0,0,0,0,null],["Naru Reddy","2026-03-22",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-03-22",40,0,0,0,0,0,0,0,"2026-04-29"],["Anjali Puri","2026-03-29",40,0,0,0,0,0,0,0,"2026-04-07"],["Brian A Forde","2026-03-29",32,0,0,0,0,0,0,0,null],["Cayla Polk","2026-03-29",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-03-29",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-03-29",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-03-29",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-03-29",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-03-29",8,0,0,0,0,0,0,0,null],["Megan Belcher","2026-03-29",40,1.62,0,19.47,11.53,0,0,0,null],["Michael Johnson","2026-03-29",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-03-29",37.5,0,0,0,0,0,0,0,"2026-04-23"],["Naru Reddy","2026-03-29",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-03-29",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-04-05",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-04-05",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-04-05",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-04-05",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-04-05",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-04-05",32,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-04-05",30,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-04-05",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-04-05",38.72,0,0,0,0,0,0,0,null],["Michael Johnson","2026-04-05",32,0,0,0,0,0,0,0,null],["Michael Jordan","2026-04-05",30,0,0,0,0,0,0,0,"2026-04-28"],["Naru Reddy","2026-04-05",32,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-04-05",34,0,0,0,0,0,0,0,null],["Anjali Puri","2026-04-12",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-04-12",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-04-12",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-04-12",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-04-12",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-04-12",32,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-04-12",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-04-12",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-04-12",40,0.2,0,0,0,0,0,0,null],["Michael Johnson","2026-04-12",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-04-12",37.5,0,0,0,0,0,0,0,null],["Naru Reddy","2026-04-12",24,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-04-12",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-04-19",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-04-19",24,0,0,0,0,0,0,0,null],["Cayla Polk","2026-04-19",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-04-19",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-04-19",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-04-19",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-04-19",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-04-19",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-04-19",38.82,0,0,0,0,0,0,0,null],["Michael Johnson","2026-04-19",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-04-19",37.5,0,0,0,0,0,0,0,null],["Naru Reddy","2026-04-19",40,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-04-19",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-04-26",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-04-26",32,0,0,0,0,0,0,0,null],["Cayla Polk","2026-04-26",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-04-26",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-04-26",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-04-26",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-04-26",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-04-26",32,0,0,0,0,0,0,0,null],["Megan Belcher","2026-04-26",40,0.1,0,0,0,0,0,0,null],["Michael Johnson","2026-04-26",40,0,0,0,0,0,0,0,null],["Naru Reddy","2026-04-26",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-04-26",37.5,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-04-26",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-05-03",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-05-03",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-05-03",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-05-03",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-05-03",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-05-03",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-05-03",30,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-05-03",40,0,0,0,0,0,0,0,null],["Megan Belcher","2026-05-03",38.69,0,0,0,0,0,0,0,null],["Michael Johnson","2026-05-03",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-05-03",37.5,0,0,0,0,0,0,0,null],["Naru Reddy","2026-05-03",32,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-05-03",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-05-10",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-05-10",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-05-10",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-05-10",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-05-10",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-05-10",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-05-10",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-05-10",24,0,0,0,0,0,0,0,null],["Megan Belcher","2026-05-10",36.04,0,0,0,0,0,0,0,null],["Michael Johnson","2026-05-10",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-05-10",37.5,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-05-10",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-05-17",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-05-17",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-05-17",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-05-17",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-05-17",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-05-17",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-05-17",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-05-17",38.5,0,0,0,0,0,0,0,null],["Megan Belcher","2026-05-17",37.27,0,0,0,0,0,0,0,null],["Michael Johnson","2026-05-17",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-05-17",37.5,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-05-17",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-05-24",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-05-24",42,0,0,0,0,0,0,0,null],["Cayla Polk","2026-05-24",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-05-24",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-05-24",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-05-24",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-05-24",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-05-24",32,0,0,0,0,0,0,0,null],["Megan Belcher","2026-05-24",39.65,0,0,0,0,0,0,0,null],["Michael Johnson","2026-05-24",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-05-24",37.5,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-05-24",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-05-31",32,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-05-31",19,0,0,0,0,0,0,0,null],["Cayla Polk","2026-05-31",37.5,0,0,0,0,0,0,0,null],["Megan Belcher","2026-05-31",29.8,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-05-31",24,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-05-31",30,0,0,0,0,0,0,0,null],["Michael Jordan","2026-05-31",30,0,0,0,0,0,0,0,null],["Michael Johnson","2026-05-31",32,0,0,0,0,0,0,0,null],["Karena Pavon","2026-05-31",32,0,0,0,0,0,0,0,null],["Brian A Forde","2026-05-31",40,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-05-31",32,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-05-31",36,0,0,0,0,0,0,0,null],["Anjali Puri","2026-06-07",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-06-07",24,0,0,0,0,0,0,0,null],["Cayla Polk","2026-06-07",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-06-07",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-06-07",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-06-07",32,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-06-07",35.16,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-06-07",40,2,0,0,0,0,0,0,null],["Megan Belcher","2026-06-07",29.92,0,0,0,0,0,0,0,null],["Michael Johnson","2026-06-07",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-06-07",37.5,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-06-07",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-06-14",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-06-14",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-06-14",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-06-14",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-06-14",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-06-14",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-06-14",37.5,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-06-14",35.5,0,0,0,0,0,0,0,null],["Michael Johnson","2026-06-14",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-06-14",37.5,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-06-14",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-06-21",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-06-21",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-06-21",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-06-21",32,0,0,0,0,0,0,0,null],["Karena Pavon","2026-06-21",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-06-21",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-06-21",30,0,0,0,0,0,0,0,null],["Lee Jeffries","2026-06-21",40,1.5,0,0,0,0,0,0,null],["Michael Johnson","2026-06-21",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-06-21",30,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-06-21",36,0,0,0,0,0,0,0,null],["Anjali Puri","2026-06-28",40,0,0,0,0,0,0,0,null],["Brian A Forde","2026-06-28",40,0,0,0,0,0,0,0,null],["Cayla Polk","2026-06-28",37.5,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-06-28",40,0,0,0,0,0,0,0,null],["Karena Pavon","2026-06-28",40,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-06-28",40,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-06-28",36.3,0,0,0,0,0,0,0,null],["Michael Johnson","2026-06-28",40,0,0,0,0,0,0,0,null],["Michael Jordan","2026-06-28",37.5,0,0,0,0,0,0,0,null],["Andrew Paulson","2026-06-28",40,0,0,0,0,0,0,0,null],["Anjali Puri","2026-07-05",32,0,0,0,0,0,0,0,null],["Cayla Polk","2026-07-05",15,0,0,0,0,0,0,0,null],["Janzen D Derayal","2026-07-05",32,0,0,0,0,0,0,0,null],["Karena Pavon","2026-07-05",32,0,0,0,0,0,0,0,null],["Kathleen Holroyd","2026-07-05",32,0,0,0,0,0,0,0,null],["Kecia L Booker","2026-07-05",30,0,0,0,0,0,0,0,null],["Michael Johnson","2026-07-05",32,0,0,0,0,0,0,0,null],["Michael Jordan","2026-07-05",30,0,0,0,0,0,0,0,null]],"fte":[{"name":"Manni Chahal-Rao","client":"White Plains Hospital","title":"","start":"2025-12-22","inv":"2025-12-30","salary":152733.16,"pct":0.2,"msp":0,"amount":30546.63,"due":"2026-03-30","paid":30546.63,"rec":"Gone Anshik"},{"name":"Rena Odi","client":"White Plains Hospital","title":"","start":"2026-02-02","inv":"2026-02-02","salary":95199,"pct":0.2,"msp":0,"amount":19039.8,"due":"2026-05-03","paid":19039.8,"rec":"Himanshi"},{"name":"Jessica Benjamin","client":"Mercy health Hospital","title":"","start":"2026-02-09","inv":"2026-02-09","salary":240000,"pct":0.2,"msp":0.0625,"amount":45000,"due":"2026-05-10","paid":0,"rec":"Himanshi"},{"name":"Jesenia Escobar-Saucedo","client":"White Plains Hospital","title":"","start":"2026-03-16","inv":"2026-03-16","salary":95000,"pct":0.2,"msp":0,"amount":5000,"due":"2026-07-01","paid":5000,"rec":"Abhishek Tiwari"},{"name":"Brittany Bensch","client":"CHOP","title":"","start":"2026-04-13","inv":"2026-04-13","salary":124800,"pct":0.11985,"msp":0.0215,"amount":14511.2,"due":"2026-07-12","paid":0,"rec":"Ritika"},{"name":"Sandeep Kaur","client":"Worldwide Logistic","title":"Accounting Operations Specialist","start":"2026-05-04","inv":"2026-05-04","salary":65000,"pct":0.15,"msp":0,"amount":9750,"due":"2026-08-02","paid":0,"rec":"Ravi Jhmnani"},{"name":"Tarun Salwan","client":"White Plains Hospital","title":"Manager-Respiratory Care","start":"2026-06-01","inv":"2026-06-01","salary":130000,"pct":0.2,"msp":0,"amount":26000,"due":"2026-08-30","paid":0,"rec":"Himanshi"},{"name":"Crystal Hulse","client":"Warner Hospital & Health Services - Medefis","title":"Radiology Tech","start":"2026-06-08","inv":"2026-06-08","salary":64958.4,"pct":0.18,"msp":0.0625,"amount":10961.73,"due":"2026-09-06","paid":0,"rec":"Aditya"},{"name":"Christina Wilken","client":"HWS","title":"","start":"2026-05-11","inv":"2026-05-11","salary":68640,"pct":0.2,"msp":0.2,"amount":10982.4,"due":"2026-06-10","paid":10982.4,"rec":"Himanshi"}],"grid":{"spread":[0,3001,7001,10001,15001],"gpmTiers":[0,5,10,15,20,25],"gpTiers":[0,5,10,15,20,25],"gpm":[[0.55,0.55,0.7,0.8,1.05,1.3],[0.65,0.65,0.85,0.95,1.3,1.55],[0.75,0.75,0.95,1.1,1.55,1.8],[0.85,0.85,1,1.25,1.8,2.05],[1.05,1.05,1.25,1.45,2.05,2.55]],"gp":[[0.61,0.89,1.16,1.43,1.71,1.91],[0.72,1.05,1.43,1.71,1.93,2.15],[0.82,1.21,1.71,1.98,2.2,2.35],[0.94,1.38,1.98,2.26,2.48,2.68],[1.16,1.6,2.26,2.81,3.03,3.3]]},"load":{"W2":20,"CTOC":2},"runDate":"2026-07-01"};
+const ASOF='2026-07-14', LAST_WK='2026-07-12', LS='staffing-billing-demo-v2';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONF=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const P=s=>{const a=s.split('-');return Date.UTC(+a[0],a[1]-1,+a[2])};
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const addD=(s,n)=>iso(P(s)+n*864e5);
+const dd=(a,b)=>Math.round((P(a)-P(b))/864e5);
+const fd=s=>{if(!s)return'—';const a=s.split('-');return MON[a[1]-1]+' '+(+a[2])+', '+a[0]};
+const fds=s=>{const a=s.split('-');return MON[a[1]-1]+' '+(+a[2])};
+const eom1=s=>{const a=s.split('-');return iso(Date.UTC(+a[0],+a[1]+1,0))};
+const qtr=s=>{const a=s.split('-');return 'Q'+(Math.floor((a[1]-1)/3)+1)+' '+a[0]};
+const monLabel=k=>MONF[+k.slice(5)-1]+' '+k.slice(0,4);
+const $m=(v,d=2)=>(v<-0.004?'−':'')+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const $n=(v,d=2)=>(+v).toLocaleString('en-US',{maximumFractionDigits:d});
+const pct=v=>(+v).toFixed(1)+'%';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum=(a,f)=>a.reduce((s,x)=>s+(f(x)||0),0);
+const WEEKS=[];for(let w='2026-01-04';w<='2027-01-03';w=addD(w,7))WEEKS.push(w);
+let C={};const reC=()=>{C={};S.cands.forEach(c=>C[c.name]=c)};
+const HRS=[['Regular',0],['Overtime',1],['Holiday',2],['On-call',3],['Call-back',4],['DT',5],['PTO',6]];
+const tsReady=t=>!!(t&&String(t.tsn||'').trim()&&t.h[0]>0);
+
+/* ---------- state ---------- */
+function fresh(){
+  const ts={};
+  D.rows.forEach(r=>{ts[r[0]+'|'+r[1]]={h:r.slice(2,9),exp:r[9]||0,rcvd:r[10]?{date:r[10],amt:null}:null,status:'approved'}});
+  const fte={};D.fte.forEach(f=>{if(f.paid>0)fte[f.name]={date:null,amt:f.paid}});
+  return {cands:JSON.parse(JSON.stringify(D['cands'])),ts,fte,clients:{},load:{W2:D.load.W2,CTOC:D.load.CTOC},adp:{},check:{},locks:{},xc:[],unit:'mult',role:'admin'};
+}
+let S=null;
+try{S=JSON.parse(localStorage.getItem(LS))}catch(e){}
+if(!S||!S.ts)S=fresh();
+if(!S.cands)S.cands=JSON.parse(JSON.stringify(D['cands']));
+if(!S.xc)S.xc=[];
+reC();
+// Seed pay history: every pay date before the latest W2 run is closed, ADP hours matched, checklist done
+function seedRefs(){
+  if(S.seededRefs)return;const ini=n=>n.split(' ').map(w=>w[0]).join('').toUpperCase();let inv=1001;
+  Object.keys(S.ts).sort((a,b)=>a.slice(a.indexOf('|'))<b.slice(b.indexOf('|'))?-1:1).forEach(k=>{const t=S.ts[k],i=k.indexOf('|'),n=k.slice(0,i),w=k.slice(i+1);if(!t.h.some(x=>x>0))return;
+    if(!t.tsn)t.tsn='TS-'+w.slice(2,4)+String(wkNum(w)).padStart(2,'0')+'-'+ini(n);if(!t.invn&&t.status==='approved')t.invn='INV-'+(inv++)});
+  S.seededRefs=1;
+}
+function seedHistory(){
+  seedRefs();if(S.seeded)return;const ls=allLines().filter(l=>l.r.pay>0),dates=[...new Set(ls.map(l=>l.pd))].sort();
+  const lastW2=dates.filter(d=>d<=ASOF&&ls.some(l=>l.pd===d&&l.c.pt==='W2')).pop();
+  const who=['Payroll team','Payroll team','Finance'];
+  dates.filter(d=>d<lastW2).forEach((d,i)=>{
+    const w2=ls.filter(l=>l.pd===d&&l.c.pt==='W2'),m={};w2.forEach(l=>m[l.name]=(m[l.name]||0)+l.r.hours);
+    Object.entries(m).forEach(([n,h])=>S.adp[d+'|'+n]=Math.round(h*100)/100);
+    S.check[d]=[true,true,true,true,true,true,true];
+    S.locks['pay|'+d]={at:addD(d,-2),by:who[i%3]};
+  });
+  S.seeded=1;
+}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+const U={plMode:'table',plEdit:null,plErr:null,delConfirm:false,wk:LAST_WK,tsF:'all',tsQ:'',tsSel:null,plF:'all',plQ:'',plT:'all',plSel:null,arF:'unpaid',arC:'all',arSel:null,invC:null,invN:null,invQ:'',invW:null,invDr:false,fteDr:false,fteSel:null,fteQ:'',payTab:'run',pyMode:'week',pyWk:LAST_WK,pyFrom:'2026-01-01',pyTo:'2026-06-30',pyBasis:'pd',pyT:'all',pyQ:'',pyDr:false,pySel:null,payDate:'2026-07-10',mon:'2026-05',recSel:null,rep:'state',confirmReset:false};
+
+/* ---------- calculations (same rules as the workbook) ---------- */
+function client(n){const b=D.clients.concat(S.xc||[]).find(c=>c.name===n)||{name:n,msp:0,otx:1,dtx:1,terms:30,scomm:0};return Object.assign({},b,S.clients[n]||{})}
+function calc(c,t){
+  const cl=client(c.client), L=(S.load[c.pt]??20)/100, k=1-cl.msp;
+  const [st,ot,hol,on,cb,dt,pto]=t.h;
+  const n={st:c.bST*k,ot:c.bOT*k,hol:c.bHol*k,on:c.bOn*k,cb:c.bCb*k};
+  const billST=st*n.st, bill=billST+ot*n.ot+hol*n.hol+on*n.on+cb*n.cb+dt*n.hol;
+  const payST=st*c.pST, stipAmt=st*c.stip, pay=payST+ot*c.pOT+hol*c.pHol+on*c.pOn+cb*c.pCb+stipAmt;
+  const gp=billST-payST*(1+L), adj=gp*(1-cl.scomm/100);
+  const rr=(n.st-(c.pST*(1+L)+c.stip))*(1-cl.scomm/100);
+  return {bill,billST,pay,payST,stipAmt,gp,adj,gpm:billST?gp/billST*100:0,rr,spread:rr*(st-pto),msp:cl.msp,terms:cl.terms,n,L,hours:st+ot+hol+on+cb+dt};
+}
+function payDate(c,wk,terms){if(c.pt==='CTOC')return addD(eom1(wk),terms);if(c.weekly)return addD(wk,12);return D.cal[wk]||addD(wk,19)}
+function line(name,wk){const c=C[name],t=S.ts[name+'|'+wk];const r=calc(c,t);return {k:name+'|'+wk,name,wk,c,t,r,due:addD(wk,r.terms),pd:payDate(c,wk,r.terms)}}
+function allLines(){const out=[];for(const k in S.ts){const i=k.indexOf('|'),name=k.slice(0,i),wk=k.slice(i+1);if(!C[name])continue;const l=line(name,wk);if(l.r.hours>0||l.t.rcvd)out.push(l)}return out}
+function ar(l){
+  const bill=l.r.bill;if(bill<=0.004)return null;
+  const rc=l.t.rcvd, got=rc?(rc.amt==null?bill:rc.amt):0, bal=Math.max(0,bill-got);
+  let st=rc?(bal<=0.01?'Paid':'Short paid'):(l.due<ASOF?'Overdue':'Open');
+  return {bill,got,bal,st,late:(st==='Overdue'||st==='Short paid')?Math.max(0,dd(ASOF,l.due)):0};
+}
+const hasHours=(n,w)=>{const t=S.ts[n+'|'+w];return !!(t&&t.h.some(x=>x>0))};
+const activeIn=w=>S.cands.filter(c=>inScope(c)&&c.start<=w&&(!c.end||c.end>=addD(w,-6)));
+const isActive=c=>!c.end||c.end>=ASOF;
+function bandIdx(v){let i=0;D.grid.spread.forEach((s,j)=>{if(v>=s)i=j});return i}
+function tierIdx(v){let i=0;D.grid.gpTiers.forEach((s,j)=>{if(v>=s)i=j});return i}
+function commission(mon){
+  const wks=WEEKS.filter(w=>w.slice(0,7)===mon);
+  const recs=[...new Set(S.cands.map(c=>c.rec))].filter(r=>r&&r!=='Gone').sort();
+  return recs.map(R=>{
+    const lines=S.cands.filter(c=>c.rec===R).map(c=>{
+      const per=wks.map(w=>hasHours(c.name,w)?calc(c,S.ts[c.name+'|'+w]):null);
+      const rr=calc(c,{h:[0,0,0,0,0,0,0]}).rr;
+      const tenure=Math.round(dd(c.end||ASOF,c.start)/7);
+      return {c,per,rr,elig:tenure>=6,tenure};
+    }).filter(x=>x.per.some(p=>p));
+    const weekTot=wks.map((w,i)=>sum(lines,x=>x.per[i]?x.per[i].spread:0));
+    const band=weekTot.map(bandIdx);
+    lines.forEach(x=>{x.tier=tierIdx(x.rr);x.weeks=x.per.map((p,i)=>p?{spread:p.spread,rate:D.grid.gp[band[i]][x.tier],comm:x.elig?p.spread*D.grid.gp[band[i]][x.tier]*(S.unit==='pct'?0.01:1):0}:null);
+      x.spread=sum(x.weeks,w=>w&&w.spread);x.comm=sum(x.weeks,w=>w&&w.comm)});
+    return {R,lines,wks,weekTot,band,spread:sum(lines,x=>x.spread),comm:sum(lines,x=>x.comm)};
+  }).filter(r=>r.lines.length);
+}
+
+/* ---------- roles (RBAC) ---------- */
+const ROLES=[
+ {id:'admin',label:'Admin',kind:'admin'},
+ {id:'finance',label:'Finance team',kind:'finance'},
+ {id:'payroll',label:'Payroll team',kind:'payroll'},
+ {id:'nathan',label:'Nathan · DM',kind:'dm',p:'Nathan'},
+ {id:'john',label:'John · Sales Director',kind:'sd',p:'John'},
+ {id:'bidya',label:'Bidya · Sales Lead',kind:'lead',p:'Bidya'},
+ {id:'abhinav',label:'Abhinav · Delivery Lead & Recruiter',kind:'lead',p:'Abhinav'},
+ {id:'ravi',label:'Ravi · Delivery Lead & Recruiter',kind:'lead',p:'Ravi'},
+ {id:'bhupendra',label:'Bhupendra · Recruiter',kind:'rec',p:'Bhupendra'},
+ {id:'monu',label:'Monu · Recruiter',kind:'rec',p:'Monu'},
+ {id:'ritika',label:'Ritika · Recruiter',kind:'rec',p:'Ritika'},
+ {id:'exec',label:'Executive (read-only)',kind:'exec'}];
+const ALLNAV=['home','timesheets','candidates','invoices','fte','payroll','payhist','commission','clients','settings','reports','users'];
+const NAVLBL={home:'Home',timesheets:'Timesheets',candidates:'Candidates',invoices:'Invoices & payments',fte:'Direct hires (FTE)',payroll:'Payroll',payhist:'Pay history',commission:'Commission',clients:'Clients',settings:'Settings',reports:'Reports',users:'Users & roles'};
+const PERMS={
+ admin:  {nav:ALLNAV,bill:1,pay:1,margin:1,editCands:1,editHours:1,editPay:1,editClients:1,approve:1,scope:'All placements'},
+ finance:{nav:['home','timesheets','candidates','invoices','fte','payroll','payhist','commission','clients','settings','reports'],bill:1,pay:1,margin:1,editCands:1,editHours:1,editPay:1,editClients:1,approve:1,scope:'All placements'},
+ payroll:{nav:['home','timesheets','candidates','payroll','payhist','reports'],bill:0,pay:1,margin:0,editHours:1,scope:'All placements · pay only'},
+ dm:     {nav:['home','timesheets','candidates','invoices','fte','commission','reports'],bill:1,pay:1,margin:1,editCands:1,scope:'Placements under this DM'},
+ sd:     {nav:['home','timesheets','candidates','invoices','fte','commission','reports'],bill:1,pay:1,margin:1,editCands:1,scope:'Placements under this director'},
+ lead:   {nav:['home','timesheets','candidates','invoices','commission'],bill:1,pay:1,margin:1,editCands:1,editHours:1,scope:'Only placements they are named on'},
+ rec:    {nav:['home','candidates','commission'],bill:0,pay:0,margin:0,scope:'Only their placements · no rates'},
+ exec:   {nav:ALLNAV,bill:1,pay:1,margin:1,scope:'Everything · view only'}};
+const role=()=>ROLES.find(r=>r.id===S.role)||ROLES[0];
+const PM=()=>PERMS[role().kind];
+function inScope(c){const r=role();switch(r.kind){case 'dm':return c.dm===r.p;case 'sd':return c.sd===r.p;case 'lead':return [c.sl,c.dl,c.rec].includes(r.p);case 'rec':return c.rec===r.p||c.dl===r.p;default:return true}}
+const fteScope=f=>{const r=role();return ['lead','rec'].includes(r.kind)?String(f.rec).includes(r.p):true};
+
+/* ---------- small UI helpers ---------- */
+const pill=(t,k)=>`<span class="pill ${k||''}">${esc(t)}</span>`;
+const stPill=s=>pill(s,{Paid:'good',Approved:'good',Open:'info',Draft:'warn','Short paid':'warn',Overdue:'bad',Missing:'bad',Closed:'good','Not due':'info'}[s]||'');
+function nice(x){const p=10**Math.floor(Math.log10(x));const f=x/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p}
+const kfmt=v=>v>=1000?'$'+(v/1000).toLocaleString('en-US',{maximumFractionDigits:1})+'k':'$'+Math.round(v);
+function chart(weeks,a,b,la,lb){
+  const W=760,H=260,pl=58,pr=14,pt=14,pb=34,mx=Math.max(1,...a,...b),step=nice(mx/4),top=step*Math.ceil(mx/step);
+  const iw=W-pl-pr,ih=H-pt-pb,bw=iw/weeks.length,y=v=>pt+ih-(Math.max(0,v)/top)*ih;
+  let g='';for(let v=0;v<=top+1e-6;v+=step)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" class="gl"/><text x="${pl-8}" y="${y(v)+4}" class="ax" text-anchor="end">${kfmt(v)}</text>`;
+  const bars=weeks.map((w,i)=>`<rect x="${pl+i*bw+bw*.16}" y="${y(a[i])}" width="${bw*.68}" height="${y(0)-y(a[i])}" class="bar"><title>${fd(w)} · ${la} ${$m(a[i],0)} · ${lb} ${$m(b[i],0)}</title></rect>`).join('');
+  const pts=b.map((v,i)=>`${pl+i*bw+bw/2},${y(v)}`).join(' '),li=b.length-1;
+  const xl=weeks.map((w,i)=>i%4===0?`<text x="${pl+i*bw+bw/2}" y="${H-12}" class="ax" text-anchor="middle">${fds(w)}</text>`:'').join('');
+  return `<div class="legend"><span><i style="background:var(--bar)"></i>${la}</span><span><i style="background:var(--accent)"></i>${lb}</span></div><div class="chartbox"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${la} and ${lb} by week">${g}${bars}<polyline points="${pts}" class="ln"/><circle cx="${pl+li*bw+bw/2}" cy="${y(b[li])}" r="4" class="dot"/>${xl}</svg></div>`;
+}
+const head=(t,p,right='')=>`<div class="head"><div><h1>${t}</h1>${p?`<p>${p}</p>`:''}</div><div class="row">${right}</div></div>`;
+const tile=(lab,val,sub,cls='')=>`<div class="card tile ${cls}"><span class="lab">${lab}</span><span class="val">${val}</span>${sub?`<span class="sub">${sub}</span>`:''}</div>`;
+
+/* ---------- views ---------- */
+const V={};
+let L=[];
+
+V.home=()=>{
+  const pm=PM(),r=role();
+  const arl=L.map(l=>({l,a:ar(l)})).filter(x=>x.a);
+  const owed=arl.filter(x=>x.a.bal>0.01), late=owed.filter(x=>x.a.late>0);
+  const missing=activeIn(LAST_WK).filter(c=>!hasHours(c.name,LAST_WK));
+  const greet=r.p?`Hello, ${r.p}`:`Hello, ${r.label}`;
+  let tiles='';
+  if(pm.bill){tiles+=tile('Billed 2026',$m(sum(L,l=>l.r.bill),0),`${$n(sum(L,l=>l.r.hours),0)} hours`)+tile('Collected',$m(sum(arl,x=>x.a.got),0),`${arl.filter(x=>x.a.st==='Paid').length} weeks paid`)+tile('Still owed',$m(sum(owed,x=>x.a.bal),0),`${late.length} past due · ${$m(sum(late,x=>x.a.bal),0)}`,late.length?'alert':'')}
+  if(pm.pay)tiles+=tile('Payroll cost',$m(sum(L,l=>l.r.pay),0),'W2 + CTOC, incl. stipends');
+  if(pm.margin){const adj=sum(L,l=>l.r.adj),bst=sum(L,l=>l.r.billST);tiles+=tile('Gross profit (adj.)',$m(adj,0),`${pct(adj/bst*100)} of regular billing`)}
+  if(!pm.bill&&!pm.pay){const mine=S.cands.filter(inScope);tiles+=tile('My placements',mine.filter(isActive).length,`${mine.length} incl. ended`)+tile('My spread 2026',$m(sum(L,l=>l.r.spread),0),'profit per hour × hours')}
+  const wks=WEEKS.filter(w=>w<=LAST_WK);
+  let ch='';
+  if(pm.bill){ch=chart(wks,wks.map(w=>sum(L.filter(l=>l.wk===w),l=>l.r.bill)),wks.map(w=>sum(L.filter(l=>l.wk===w),l=>l.r.adj)),'Billing','Gross profit')}
+  else if(pm.pay){ch=chart(wks,wks.map(w=>sum(L.filter(l=>l.wk===w),l=>l.r.pay)),wks.map(w=>sum(L.filter(l=>l.wk===w),l=>l.r.payST)),'Total pay','Regular pay')}
+  else{const s=wks.map(w=>sum(L.filter(l=>l.wk===w),l=>l.r.spread));ch=chart(wks,s,s,'Weekly spread','Trend')}
+  let att='';
+  if(pm.nav.includes('timesheets')&&missing.length)att+=`<div class="att">${pill(missing.length+' missing','bad')}<div><b>Timesheets not entered for week ending ${fd(LAST_WK)}</b><div class="sm-t">${missing.slice(0,6).map(c=>esc(c.name)).join(', ')}${missing.length>6?'…':''}</div><a class="btn sm" href="#timesheets" style="margin-top:6px">Enter hours</a></div></div>`;
+  if(pm.bill&&late.length){const top=late.sort((a,b)=>b.a.late-a.a.late)[0];att+=`<div class="att">${pill(late.length+' late','bad')}<div><b>${$m(sum(late,x=>x.a.bal),0)} past due from clients</b><div class="sm-t">Oldest: ${esc(top.l.c.client)} · ${esc(top.l.name)} · ${top.a.late} days late</div><a class="btn sm" href="#invoices" style="margin-top:6px">Review invoices</a></div></div>`}
+  if(pm.nav.includes('fte')){const fo=D.fte.filter(fteScope).filter(f=>!S.fte[f.name]&&f.due<ASOF);if(fo.length)att+=`<div class="att">${pill(fo.length+' unpaid','bad')}<div><b>Direct-hire fees overdue: ${$m(sum(fo,f=>f.amount),0)}</b><div class="sm-t">${fo.map(f=>esc(f.name)+' ('+esc(f.client)+')').join(', ')}</div><a class="btn sm" href="#fte" style="margin-top:6px">Open direct hires</a></div></div>`}
+  const ending=S.cands.filter(inScope).filter(c=>c.end&&c.end>=addD(ASOF,-30)&&c.end<=addD(ASOF,30));
+  if(ending.length)att+=`<div class="att">${pill(ending.length+' ending','warn')}<div><b>Placements ending or just ended</b><div class="sm-t">${ending.map(c=>esc(c.name)+' · '+fd(c.end)).join('<br>')}</div></div></div>`;
+  if(pm.margin||r.kind==='rec'){const low=S.cands.filter(inScope).filter(isActive).map(c=>({c,rr:calc(c,{h:[0,0,0,0,0,0,0]}).rr})).filter(x=>x.rr<5);if(low.length)att+=`<div class="att">${pill(low.length+' low margin','warn')}<div><b>Active placements earning under $5/hr</b><div class="sm-t">${low.map(x=>esc(x.c.name)+' · '+$m(x.rr)+'/hr').join('<br>')}</div></div></div>`}
+  return head(greet,`Week ending ${fd(LAST_WK)} is the latest week. Here is what needs attention.`)+
+   `<div class="grid">${tiles}</div>
+   <div class="split"><section class="card pad wide" style="display:flex;flex-direction:column;gap:10px"><h2 style="font-size:17px">${pm.bill?'Billing and gross profit by week':pm.pay?'Payroll by week':'My weekly spread'}</h2>${ch}</section>
+   <section class="card pad narrow"><h2 style="font-size:17px;margin-bottom:4px">Needs attention</h2>${att||'<div class="empty">Nothing waiting. Nice.</div>'}</section></div>`;
+};
+
+V.timesheets=()=>{
+  const pm=PM(),wk=U.wk,cs=activeIn(wk);
+  const rows=cs.map(c=>{const k=c.name+'|'+wk,t=S.ts[k],has=hasHours(c.name,wk);const st=!has?(t&&t.status==='draft'?'Draft':'Missing'):(t.status==='approved'?'Approved':'Draft');return {c,k,t,st}}).filter(x=>{const q=(U.tsQ||'').trim().toLowerCase();if(!q)return true;const t=x.t||{};return [x.c.name,x.c.client,x.c.dept,x.c.title,t.tsn,PM().bill?t.invn:''].join(' ').toLowerCase().includes(q)});
+  const shown=rows.filter(x=>U.tsF==='all'||(U.tsF==='missing'?x.st==='Missing':U.tsF==='draft'?x.st==='Draft':x.st==='Approved'));
+  if(!U.tsSel||!rows.find(x=>x.k===U.tsSel))U.tsSel=shown[0]&&shown[0].k;
+  const cnt=s=>rows.filter(x=>x.st===s).length;
+  const wi=WEEKS.indexOf(wk);
+  const tr=x=>{const t=x.t||{h:[0,0,0,0,0,0,0]};const r=calc(x.c,t);const ro=!pm.editHours||x.st==='Approved';
+    return `<tr data-row="${esc(x.k)}" class="${x.k===U.tsSel?'sel':''}"><td><button class="btn sm" style="border:0;padding:0;background:none;text-align:left" data-act="ts-sel" data-k="${esc(x.k)}"><span><span class="nm">${esc(x.c.name)}</span><br><span class="sm-t">${esc(x.c.client)} · ${x.c.pt}${x.c.stip?' · stipend':''}</span></span></button></td>
+    <td><input class="in h tsn ${!ro&&x.st!=='Missing'&&!String(t.tsn||'').trim()?'need':''}" aria-label="Timesheet number for ${esc(x.c.name)}" data-f="tsx" data-p="tsn" data-k="${esc(x.k)}" value="${esc(t.tsn||'')}" placeholder="${ro?'':'TS-'}" ${ro?'readonly':''}></td>
+    ${HRS.map(([lab,i])=>`<td><input class="in h ${i===0&&!ro&&x.st!=='Missing'&&!(t.h[0]>0)?'need':''}" inputmode="decimal" aria-label="${lab} hours for ${esc(x.c.name)}" data-f="h" data-k="${esc(x.k)}" data-i="${i}" value="${t.h[i]?t.h[i]:''}" ${ro?'readonly':''}></td>`).join('')}
+    <td><input class="in h exp" inputmode="decimal" aria-label="Expense amount for ${esc(x.c.name)}" data-f="tsx" data-p="exp" data-k="${esc(x.k)}" value="${t.exp?t.exp:''}" placeholder="${ro?'':'0.00'}" ${ro?'readonly':''}></td>
+    ${pm.bill?`<td><input class="in h tsn" aria-label="Invoice number for ${esc(x.c.name)}" data-f="tsx" data-p="invn" data-k="${esc(x.k)}" value="${esc(t.invn||'')}" placeholder="${pm.editPay?'INV-':''}" ${pm.editPay?'':'readonly'}></td>`:''}
+    ${pm.bill?`<td class="n" data-c="bill">${$m(r.bill)}</td>`:''}${pm.pay?`<td class="n" data-c="pay">${$m(r.pay)}</td>`:''}${pm.margin?`<td class="n" data-c="sp">${$m(r.spread)}</td>`:''}
+    <td data-c="st">${stPill(x.st)}</td>
+    <td>${pm.editHours?(x.st==='Approved'?`<button class="btn sm" data-act="ts-reopen" data-k="${esc(x.k)}">Reopen</button>`:`<button class="btn sm" data-act="ts-approve" data-k="${esc(x.k)}" ${tsReady(x.t)?'':'disabled'} title="Needs a timesheet # and regular hours">Approve</button>`):''}</td></tr>`};
+  const tot=totals(shown);
+  return head('Timesheets','Enter the timesheet # and hours. Fields marked <b class="req">*</b> are needed before a week can be approved. Rates, MSP fee, pay and due dates fill in by themselves.',
+     pm.editHours?`<button class="btn" data-act="ts-copy">Copy last week's hours</button><button class="btn pri" data-act="ts-approve-all">Approve all drafts</button>`:'<span class="pill">View only</span>')+
+   `<div class="row"><button class="btn" data-act="ts-wk" data-d="-1" ${wi<=0?'disabled':''} aria-label="Previous week">‹</button>
+     <select class="in" style="width:auto" data-f="wk" aria-label="Week ending">${WEEKS.map(w=>`<option value="${w}" ${w===wk?'selected':''}>Week ending Sun ${fd(w)}</option>`).join('')}</select>
+     <button class="btn" data-act="ts-wk" data-d="1" ${wi>=WEEKS.length-1?'disabled':''} aria-label="Next week">›</button>
+     <input class="in" id="tsq" data-f="tsq" type="search" style="flex:1 1 220px;max-width:300px" placeholder="Search name, client, timesheet #${PM().bill?', invoice #':''}" aria-label="Search timesheets" value="${esc(U.tsQ||'')}">
+     <div class="chips">${[['all','All '+rows.length],['missing','Missing '+cnt('Missing')],['draft','Draft '+cnt('Draft')],['approved','Approved '+cnt('Approved')]].map(([k,l])=>`<button class="chip ${U.tsF===k?'on':''}" data-act="ts-f" data-v="${k}">${l}</button>`).join('')}</div></div>
+   <div class="split"><div class="card wide tbl"><table><thead><tr><th>Contractor</th><th>Timesheet #${RQ_}</th>${HRS.map(h=>`<th>${h[0]}${h[1]===0?RQ_:''}</th>`).join('')}<th>Expense $</th>${pm.bill?'<th>Invoice #</th>':''}${pm.bill?'<th class="n">Bill $</th>':''}${pm.pay?'<th class="n">Pay $</th>':''}${pm.margin?'<th class="n">Spread $</th>':''}<th>Status</th><th></th></tr></thead>
+   <tbody>${shown.map(tr).join('')||`<tr><td colspan="12" class="empty">${U.tsQ?'No timesheets match “'+esc(U.tsQ)+'” for this week.':'No placements match this filter for this week.'}</td></tr>`}</tbody>
+   <tfoot><tr><td>Week total</td><td></td><td class="n" id="t-h" colspan="7" style="text-align:left">${$n(tot.h)} hours</td><td class="n" id="t-e">${$m(tot.e)}</td>${pm.bill?'<td></td>':''}${pm.bill?`<td class="n" id="t-b">${$m(tot.b)}</td>`:''}${pm.pay?`<td class="n" id="t-p">${$m(tot.p)}</td>`:''}${pm.margin?`<td class="n" id="t-s">${$m(tot.s)}</td>`:''}<td colspan="2"></td></tr></tfoot></table></div>
+   <aside class="card pad narrow" id="ts-x">${explain()}</aside></div>`;
+};
+function totals(rows){let h=0,b=0,p=0,s=0,e=0;rows.forEach(x=>{const t=S.ts[x.k];if(!t)return;const r=calc(x.c,t);h+=r.hours+t.h[6];b+=r.bill;p+=r.pay;s+=r.spread;e+=+t.exp||0});return {h,b,p,s,e}}
+function explain(){
+  const k=U.tsSel;if(!k)return '<div class="empty">Pick a row to see how it is worked out.</div>';
+  const i=k.indexOf('|'),name=k.slice(0,i),wk=k.slice(i+1),c=C[name],t=S.ts[k]||{h:[0,0,0,0,0,0,0]},r=calc(c,t),pm=PM();
+  const [st,ot,hol,on,cb]=t.h;let h=`<h2 style="font-size:16px">How this row is worked out</h2><div class="sm-t" style="margin:2px 0 10px">${esc(name)} · ${esc(c.client)} · week ending ${fd(wk)}</div><div class="math"><div><span>Timesheet #</span><span>${t.tsn?esc(t.tsn):'<span class="err">missing</span>'}</span></div>${pm.bill?`<div><span>Invoice #</span><span>${t.invn?esc(t.invn):'<span class="mut">not invoiced yet</span>'}</span></div>`:''}${t.exp?`<div><span>Expense (recorded, not added to the bill, as in sheet)</span><span>${$m(+t.exp)}</span></div>`:''}<div style="height:8px"></div>`;
+  if(pm.bill){h+=`<div><span>${$n(st)} h × ${$m(c.bST)} less ${(r.msp*100).toFixed(2)}% MSP</span><span>${$m(st*r.n.st)}</span></div>`;
+    if(ot)h+=`<div><span>${$n(ot)} h overtime × ${$m(r.n.ot)}</span><span>${$m(ot*r.n.ot)}</span></div>`;if(hol)h+=`<div><span>${$n(hol)} h holiday × ${$m(r.n.hol)}</span><span>${$m(hol*r.n.hol)}</span></div>`;
+    if(on)h+=`<div><span>${$n(on)} h on-call × ${$m(r.n.on)}</span><span>${$m(on*r.n.on)}</span></div>`;if(cb)h+=`<div><span>${$n(cb)} h call-back × ${$m(r.n.cb)}</span><span>${$m(cb*r.n.cb)}</span></div>`;if(t.h[5])h+=`<div><span>${$n(t.h[5])} h double time × ${$m(r.n.hol)} (holiday rate, as in sheet)</span><span>${$m(t.h[5]*r.n.hol)}</span></div>`;
+    h+=`<div class="tot"><span>Bill to ${esc(c.client)}</span><span>${$m(r.bill)}</span></div><div><span>Invoice due (${r.terms} days)</span><span>${fd(addD(wk,r.terms))}</span></div><div style="height:8px"></div>`}
+  if(pm.pay){h+=`<div><span>${$n(st)} h × ${$m(c.pST)} pay</span><span>${$m(r.payST)}</span></div>`;if(ot)h+=`<div><span>${$n(ot)} h overtime × ${$m(c.pOT)}</span><span>${$m(ot*c.pOT)}</span></div>`;
+    if(on)h+=`<div><span>${$n(on)} h on-call × ${$m(c.pOn)}</span><span>${$m(on*c.pOn)}</span></div>`;if(c.stip)h+=`<div><span>${$n(st)} h × ${$m(c.stip)} stipend</span><span>${$m(r.stipAmt)}</span></div>`;
+    h+=`<div class="tot"><span>Pay to ${esc(name.split(' ')[0])}</span><span>${$m(r.pay)}</span></div><div><span>Pay date</span><span>${fd(payDate(c,wk,r.terms))}</span></div><div style="height:8px"></div>`}
+  if(pm.margin){h+=`<div><span>Profit per hour</span><span>${$m(r.rr)}</span></div><div><span>Weekly spread (× ${$n(st-t.h[6])} h)</span><span>${$m(r.spread)}</span></div><div><span>Gross profit, sheet rule</span><span>${$m(r.gp)} · ${pct(r.gpm)}</span></div>`;
+    if(c.stip)h+=`<div class="note" style="margin-top:8px">The sheet's gross profit leaves out the ${$m(r.stipAmt)} stipend. Spread includes it.</div>`}
+  return h+'</div>';
+}
+
+const STATES='AL Alabama|AK Alaska|AZ Arizona|AR Arkansas|CA California|CO Colorado|CT Connecticut|DE Delaware|DC District of Columbia|FL Florida|GA Georgia|HI Hawaii|ID Idaho|IL Illinois|IN Indiana|IA Iowa|KS Kansas|KY Kentucky|LA Louisiana|ME Maine|MD Maryland|MA Massachusetts|MI Michigan|MN Minnesota|MS Mississippi|MO Missouri|MT Montana|NE Nebraska|NV Nevada|NH New Hampshire|NJ New Jersey|NM New Mexico|NY New York|NC North Carolina|ND North Dakota|OH Ohio|OK Oklahoma|OR Oregon|PA Pennsylvania|RI Rhode Island|SC South Carolina|SD South Dakota|TN Tennessee|TX Texas|UT Utah|VT Vermont|VA Virginia|WA Washington|WV West Virginia|WI Wisconsin|WY Wyoming|IND India (outside US)'.split('|').map(x=>[x.slice(0,x.indexOf(' ')),x.slice(x.indexOf(' ')+1)]);
+const PEOPLE=['Nathan','John','Bidya','Abhinav','Ravi','Bhupendra','Monu','Ritika'];
+const canEditC=c=>!!PM().editCands&&inScope(c);
+const ZERO={h:[0,0,0,0,0,0,0]};
+function newCand(){const r=role(),me=r.kind==='lead'?r.p:'Gone';return {name:'',start:ASOF,end:null,dm:r.kind==='dm'?r.p:'Nathan',sd:r.kind==='sd'?r.p:'John',sl:'Gone',dl:me,rec:me,state:'',wc:'',client:'',pt:'W2',dept:'',title:'',bST:0,bOT:0,bHol:0,bOn:0,bCb:0,pST:0,pOT:0,pHol:0,pOn:0,pCb:0,stip:0,weekly:false}}
+V.candidates=()=>{
+  const pm=PM();
+  if(U.plEdit)return candForm();
+  const all=S.cands.filter(inScope);
+  const top=head('Candidates','',
+    `<div class="chips">${[['table','List'],['list','One by one']].map(([k,l])=>`<button class="chip ${U.plMode===k?'on':''}" data-act="pl-mode" data-v="${k}">${l}</button>`).join('')}</div>`+(pm.editCands?'<button class="btn pri" data-act="pl-new">+ Add candidate</button>':''));
+  if(U.plMode==='table')return top+`<section class="card"><div class="pad row" style="border-bottom:1px solid var(--line);align-items:flex-end">${plFilters()}</div><div class="tbl" id="pl-table">${plTable()}</div></section>`;
+  return top+plSplit();
+};
+function plChips(){return `<div class="chips">${[['active','Active'],['ended','Ended'],['all','All']].map(([k,l])=>`<button class="chip ${U.plF===k?'on':''}" data-act="pl-f" data-v="${k}">${l}</button>`).join('')}${[['all','W2 + CTOC'],['W2','W2'],['CTOC','CTOC']].map(([k,l])=>`<button class="chip ${U.plT===k?'on':''}" data-act="pl-t" data-v="${k}">${l}</button>`).join('')}</div>`}
+function plFilters(){return `<label class="fld" style="flex:1 1 240px;max-width:360px"><span>Find a candidate</span><input class="in" id="plq" data-f="plq" placeholder="Name or client" value="${esc(U.plQ)}"></label>${plChips()}`}
+function plSummary(all){
+  const act=all.filter(isActive),w2=act.filter(c=>c.pt==='W2').length,pm=PM();
+  const avg=act.length?sum(act,c=>calc(c,ZERO).rr)/act.length:0;
+  return `<div class="grid" style="margin-bottom:16px">${tile('Working now',act.length,`${all.length-act.length} ended`)}${tile('W2 · CTOC',w2+' · '+(act.length-w2),'of those working now')}${pm.margin?tile('Avg profit / hr',$m(avg),'working now · bill − pay − other costs'):''}${tile('Clients',new Set(act.map(c=>c.client)).size,'with someone working now')}</div>`;
+}
+function oc(c){const r=calc(c,ZERO),cl=client(c.client),msp=c.bST*cl.msp,load=c.pST*r.L,base=r.n.st-c.pST*(1+r.L)-c.stip,sc=base*cl.scomm/100;
+  const parts=[['MSP',msp],[c.pt==='W2'?'Taxes & load':'Load',load],['Stipend',c.stip],['Sales comm.',sc]].filter(x=>Math.abs(x[1])>0.004);return {tot:msp+load+c.stip+sc,parts}}
+function plTable(){
+  const pm=PM(),a=plFiltered().slice().sort((x,y)=>(isActive(y)-isActive(x))||x.name.localeCompare(y.name));
+  if(!a.length)return '<div class="empty">No candidates match.</div>';
+  const who=v=>v&&v!=='Gone'?esc(v):'<span class="mut">—</span>';
+  return `<table class="clist"><thead><tr><th>Candidate</th><th>Client</th><th>Type</th><th>Status</th><th>Recruiter · Lead</th>${pm.bill?'<th class="n">Bill / hr</th>':''}${pm.pay?'<th class="n">Pay / hr</th>':''}${pm.bill&&pm.pay?'<th class="n">Other costs / hr</th>':''}${pm.margin?'<th class="n">Profit / hr</th>':''}<th></th></tr></thead><tbody>
+  ${a.map(c=>{const on=isActive(c),rr=calc(c,ZERO).rr;return `<tr class="click${on?'':' ended'}" data-act="pl-open" data-n="${esc(c.name)}">
+   <td><div class="nm">${esc(c.name)}</div><div class="mut sm1">${esc(c.title&&c.title!=='CTOC'?c.title:(c.state?c.state:''))}${c.title&&c.title!=='CTOC'&&c.state?' · '+esc(c.state):''}</div></td>
+   <td>${esc(c.client)}</td>
+   <td>${pill(c.pt,c.pt==='W2'?'info':'')}${c.weekly?' <span class="mut sm1">weekly</span>':''}</td>
+   <td>${on?pill('Working','good'):pill('Ended')}<div class="mut sm1">${on?'since '+fd(c.start):fd(c.start)+' – '+fd(c.end)}</div></td>
+   <td>${who(c.rec)}<div class="mut sm1">${c.dl&&c.dl!=='Gone'&&c.dl!==c.rec?'Lead: '+esc(c.dl):''}</div></td>
+   ${pm.bill?`<td class="n">${$m(c.bST)}</td>`:''}${pm.pay?`<td class="n">${$m(c.pST)}</td>`:''}${pm.bill&&pm.pay?(()=>{const k=oc(c);return `<td class="n">${$m(k.tot)}<div class="mut sm1">${k.parts.map(([l,v])=>l+' '+$m(v)).join(' · ')}</div></td>`})():''}
+   ${pm.margin?`<td class="n"><b class="${rr<0?'lowm':'gainm'}">${$m(rr)}</b></td>`:''}
+   <td>${canEditC(c)?`<button class="btn sm" data-act="pl-edit" data-n="${esc(c.name)}">Edit</button>`:''}</td></tr>`}).join('')}</tbody></table>`;
+}
+function candForm(){
+  const pm=PM(),isNew=U.plEdit==='new',c=isNew?(U.plDraft||newCand()):(U.plDraft||C[U.plEdit]),e=U.plErr||{};
+  if(!c)return '<div class="empty">Candidate not found.</div>';
+  const er=id=>e[id]?`<span class="err">${e[id]}</span>`:'';
+  const txt=(id,lab,v,x='')=>`<label class="fld"><span>${lab}</span><input class="in" id="cf-${id}" value="${esc(v??'')}" ${x}>${er(id)}</label>`;
+  const nm=(id,lab,v)=>`<label class="fld"><span>${lab}</span><input class="in" id="cf-${id}" inputmode="decimal" placeholder="0.00" value="${v?v:''}">${er(id)}</label>`;
+  const sel=(id,lab,opts,v)=>`<label class="fld"><span>${lab}</span><select class="in" id="cf-${id}">${opts.map(o=>{const [val,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(val)}" ${String(val)===String(v)?'selected':''}>${esc(l)}</option>`}).join('')}</select>${er(id)}</label>`;
+  const RQ='<b class="req" aria-label="required"> *</b>';
+  const ppl=[['Gone','Not assigned'],...PEOPLE.map(p=>[p,p])];
+  const cls=[['','Choose a client'],...D.clients.concat(S.xc||[]).map(x=>[x.name,x.name]).sort((a,b)=>a[0].localeCompare(b[0]))];
+  return head(isNew?'Add candidate':'Edit · '+esc(c.name),isNew?'Fields marked <b class="req">*</b> are required.':'Fields marked <b class="req">*</b> are required. Set an end date to end the placement.')+
+  `<form id="candf" class="card pad" style="display:flex;flex-direction:column;gap:22px" novalidate>
+   <div class="fsec"><h3>Person &amp; placement</h3><div class="formgrid">
+    ${txt('name','Full name'+RQ,c.name,isNew?'autocomplete="off"':'readonly')}
+    ${sel('client','Client'+RQ,cls,c.client)}
+    ${sel('pt','Pay type'+RQ,[['W2','W2 · on our payroll'],['CTOC','CTOC · Corp-to-Corp']],c.pt)}
+    ${txt('title','Job title / dept',c.title)}
+    ${sel('state','Work state'+RQ,[['','Choose a state'],...STATES.map(([k,n])=>[k,k+' · '+n]),...(c.state&&!STATES.some(x=>x[0]===c.state)?[[c.state,c.state]]:[])],c.state)}
+    ${txt('wc','Workers\' comp code',c.wc)}
+    ${txt('start','Start date'+RQ,c.start,'type="date"')}
+    ${txt('end','End date (blank = still working)',c.end,'type="date"')}
+    <label class="chk" style="align-self:end"><input type="checkbox" id="cf-weekly" ${c.weekly?'checked':''}>Paid weekly (not bi-weekly)</label>
+   </div></div>
+   <div class="fsec"><h3>People on this placement</h3><div class="formgrid">
+    ${sel('dm','DM',ppl,c.dm)}${sel('sd','Sales Director',ppl,c.sd)}${sel('sl','Sales Lead',ppl,c.sl)}${sel('dl','Delivery Lead',ppl,c.dl)}${sel('rec','Recruiter',ppl,c.rec)}
+   </div></div>
+   ${pm.bill?`<div class="fsec"><h3>Bill rates ($/hr, before MSP fee)</h3><div class="formgrid">${nm('bST','Regular'+RQ,c.bST)}${nm('bOT','Overtime',c.bOT)}${nm('bHol','Holiday',c.bHol)}${nm('bOn','On-call',c.bOn)}${nm('bCb','Call-back',c.bCb)}</div></div>`:''}
+   ${pm.pay?`<div class="fsec"><h3>Pay rates ($/hr)</h3><div class="formgrid">${nm('pST','Regular'+RQ,c.pST)}${nm('pOT','Overtime',c.pOT)}${nm('pHol','Holiday',c.pHol)}${nm('pOn','On-call',c.pOn)}${nm('pCb','Call-back',c.pCb)}${nm('stip','Stipend (per regular hour)',c.stip)}</div></div>`:''}
+   ${!isNew&&pm.bill&&pm.pay?`<div class="note">Current profit per hour: <b>${$m(calc(c,ZERO).rr)}</b>. It updates after you save. In the real system a rate change would ask “from which date?” so past weeks keep their old rates.</div>`:''}
+   <div class="row"><button class="btn pri" type="submit">${isNew?'Add candidate':'Save changes'}</button><button class="btn" type="button" data-act="pl-cancel">Cancel</button>${Object.keys(e).length?'<span class="err">Fix the fields marked in red.</span>':''}</div>
+  </form>`;
+}
+function saveCand(){
+  const g=id=>document.getElementById('cf-'+id),v=id=>g(id)?g(id).value.trim():null,isNew=U.plEdit==='new';
+  const base=isNew?newCand():C[U.plEdit],o=Object.assign({},base),e={};
+  if(isNew)o.name=v('name').replace(/\s+/g,' ');
+  ['client','pt','title','wc','start','dm','sd','sl','dl','rec'].forEach(k=>{if(g(k))o[k]=v(k)});
+  o.dept=o.title;o.state=(v('state')||'').toUpperCase();o.end=v('end')||null;o.weekly=g('weekly').checked;
+  ['bST','bOT','bHol','bOn','bCb','pST','pOT','pHol','pOn','pCb','stip'].forEach(k=>{if(!g(k))return;const raw=v(k),n=raw===''?0:parseFloat(raw);if(!(n>=0))e[k]='Enter a number, 0 or more';else o[k]=n});
+  if(!o.name)e.name='Enter the full name';else if(isNew&&C[o.name])e.name='Someone with this name already exists';
+  if(!o.client)e.client='Choose a client';
+  if(!o.start)e.start='Enter a start date';
+  if(!o.state)e.state='Choose a work state';
+  if(g('bST')&&!e.bST&&!(o.bST>0))e.bST='Enter the regular bill rate';
+  if(g('pST')&&!e.pST&&!(o.pST>0))e.pST='Enter the regular pay rate';
+  if(o.end&&o.start&&o.end<o.start)e.end='End date is before the start date';
+  if(Object.keys(e).length){U.plErr=e;U.plDraft=o;render();return}
+  if(isNew)S.cands.push(o);else S.cands[S.cands.findIndex(x=>x.name===base.name)]=o;
+  save();reC();U.plEdit=null;U.plErr=null;U.plDraft=null;U.plSel=o.name;U.plMode='list';U.plQ='';U.plF=isActive(o)?'active':'ended';U.plT='all';render();window.scrollTo(0,0);
+}
+function plSplit(){
+  return `<div class="split"><section class="card narrow" style="flex-basis:300px"><div class="pad" style="display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)">
+   <label class="fld"><span>Find a candidate</span><input class="in" id="plq" data-f="plq" placeholder="Name or client" value="${esc(U.plQ)}"></label>
+   <div class="chips">${[['active','Active'],['ended','Ended'],['all','All']].map(([k,l])=>`<button class="chip ${U.plF===k?'on':''}" data-act="pl-f" data-v="${k}">${l}</button>`).join('')}${[['all','W2 + CTOC'],['W2','W2'],['CTOC','CTOC']].map(([k,l])=>`<button class="chip ${U.plT===k?'on':''}" data-act="pl-t" data-v="${k}">${l}</button>`).join('')}</div></div>
+   <div class="list" id="pl-list">${plList()}</div></section>
+   <section class="card pad wide" id="pl-d">${plDetail()}</section></div>`;
+};
+function plFiltered(){const q=U.plQ.toLowerCase();return S.cands.filter(inScope).filter(c=>(U.plF==='all'||(U.plF==='active'?isActive(c):!isActive(c)))&&(U.plT==='all'||c.pt===U.plT)&&(!q||(c.name+' '+c.client).toLowerCase().includes(q)))}
+function plList(){const a=plFiltered();if(!U.plSel||!a.find(c=>c.name===U.plSel))U.plSel=a[0]&&a[0].name;
+  return a.map(c=>`<div class="li ${c.name===U.plSel?'sel':''}" role="button" tabindex="0" data-act="pl-sel" data-n="${esc(c.name)}"><div><div class="nm">${esc(c.name)}</div><div class="sm-t">${esc(c.client)} · ${esc(c.state||'no state')}${isActive(c)?'':' · ended '+fd(c.end)}</div></div>${pill(c.pt,c.pt==='W2'?'info':'')}</div>`).join('')||'<div class="empty">No placements match.</div>'}
+function plDetail(){
+  const c=C[U.plSel];if(!c)return '<div class="empty">Pick a placement.</div>';
+  const pm=PM(),r0=calc(c,{h:[0,0,0,0,0,0,0]}),cl=client(c.client),ls=L.filter(l=>l.name===c.name).sort((a,b)=>b.wk<a.wk?-1:1);
+  const who=v=>v&&v!=='Gone'?esc(v):'<span class="mut">Not assigned</span>';
+  let rates='';
+  if(pm.bill)rates+=`<div class="kv"><span>Bill · regular</span><b>${$m(c.bST)}/hr <span class="sm-t">→ ${$m(r0.n.st)} after ${(cl.msp*100).toFixed(2)}% MSP</span></b></div>`+(c.bOT?`<div class="kv"><span>Bill · overtime</span><b>${$m(c.bOT)}/hr</b></div>`:'')+(c.bHol?`<div class="kv"><span>Bill · holiday</span><b>${$m(c.bHol)}/hr</b></div>`:'')+(c.bOn?`<div class="kv"><span>Bill · on-call</span><b>${$m(c.bOn)}/hr</b></div>`:'')+(c.bCb?`<div class="kv"><span>Bill · call-back</span><b>${$m(c.bCb)}/hr</b></div>`:'');
+  if(pm.pay)rates+=`<div class="kv"><span>Pay · regular</span><b>${$m(c.pST)}/hr</b></div>`+(c.pOT?`<div class="kv"><span>Pay · overtime</span><b>${$m(c.pOT)}/hr</b></div>`:'')+(c.pOn?`<div class="kv"><span>Pay · on-call</span><b>${$m(c.pOn)}/hr</b></div>`:'')+(c.stip?`<div class="kv"><span>Stipend</span><b>${$m(c.stip)}/hr</b></div>`:'')+`<div class="kv"><span>Pay + ${S.load[c.pt]}% employer cost${c.stip?' + stipend':''}</span><b>${$m(c.pST*(1+r0.L)+c.stip)}/hr</b></div>`;
+  rates+=`<div class="kv" style="background:var(--accent-soft);padding:8px;border-radius:7px"><span style="color:var(--ink);font-weight:600">Profit per hour</span><b>${$m(r0.rr)}/hr</b></div>`;
+  const hrs=sum(ls,l=>l.r.hours);
+  const totals=`<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">${tile('Hours 2026',$n(hrs,1))}${pm.bill?tile('Billed',$m(sum(ls,l=>l.r.bill),0)):''}${pm.pay?tile('Paid out',$m(sum(ls,l=>l.r.pay),0)):''}${tile('Spread',$m(sum(ls,l=>l.r.spread),0))}</div>`;
+  const hist=`<div class="tbl"><table><thead><tr><th>Week ending</th><th class="n">Hours</th>${pm.bill?'<th class="n">Billed</th><th>Client paid</th>':''}${pm.pay?'<th class="n">Pay</th>':''}<th class="n">Spread</th></tr></thead><tbody>${ls.slice(0,10).map(l=>{const a=ar(l);return `<tr><td>${fd(l.wk)}</td><td class="n">${$n(l.r.hours)}</td>${pm.bill?`<td class="n">${$m(l.r.bill)}</td><td>${a?stPill(a.st):''}</td>`:''}${pm.pay?`<td class="n">${$m(l.r.pay)}</td>`:''}<td class="n">${$m(l.r.spread)}</td></tr>`}).join('')||'<tr><td colspan="6" class="empty">No hours yet.</td></tr>'}</tbody></table></div>`;
+  return `<div style="display:flex;flex-direction:column;gap:16px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2 style="font-size:22px">${esc(c.name)}</h2><div class="sm-t" style="font-size:13.5px">${esc(c.title)} · ${esc(c.client)} · ${esc(c.state||'state missing')} · ${c.pt}${c.weekly?' · paid weekly':''}</div></div><div class="row">${isActive(c)?pill('Active since '+fd(c.start),'good'):pill('Ended '+fd(c.end))}${canEditC(c)?`<button class="btn sm" data-act="pl-edit" data-n="${esc(c.name)}">Edit</button>`:''}${role().kind==='admin'&&!Object.keys(S.ts).some(k=>k.startsWith(c.name+'|'))?`<button class="btn sm" data-act="pl-del">${U.delConfirm?'Click again to delete':'Delete'}</button>`:''}</div></div>
+  ${totals}
+  <div class="split"><div style="flex:1 1 280px;min-width:0"><h3 style="font-size:15px;margin-bottom:4px">Rates</h3>${rates}</div>
+  <div style="flex:1 1 220px;min-width:0"><h3 style="font-size:15px;margin-bottom:4px">People</h3><div class="kv"><span>DM</span><b>${who(c.dm)}</b></div><div class="kv"><span>Sales Director</span><b>${who(c.sd)}</b></div><div class="kv"><span>Sales Lead</span><b>${who(c.sl)}</b></div><div class="kv"><span>Delivery Lead</span><b>${who(c.dl)}</b></div><div class="kv"><span>Recruiter</span><b>${who(c.rec)}</b></div>
+  <h3 style="font-size:15px;margin:12px 0 4px">Details</h3><div class="kv"><span>Client pays in</span><b>${cl.terms} days</b></div><div class="kv"><span>Workers' comp code</span><b>${esc(c.wc||'—')}</b></div><div class="kv"><span>Dept</span><b>${esc(String(c.dept).split(' ')[0])}</b></div></div></div>
+  <div><h3 style="font-size:15px;margin-bottom:6px">Recent weeks</h3>${hist}</div></div>`;
+}
+
+V.invoices=()=>{
+  const all=L.map(l=>({l,a:ar(l)})).filter(x=>x.a);
+  if(U.invC&&U.invN&&C[U.invN])return invCand(all);
+  if(U.invC)return invClient(all);
+  const by={};S.cands.filter(inScope).forEach(c=>{(by[c.client]=by[c.client]||{name:c.client,cands:[],items:[]}).cands.push(c)});
+  all.forEach(x=>{(by[x.l.c.client]=by[x.l.c.client]||{name:x.l.c.client,cands:[],items:[]}).items.push(x)});
+  const rows=Object.values(by).map(g=>({...g,cl:client(g.name),billed:sum(g.items,x=>x.a.bill),got:sum(g.items,x=>x.a.got),bal:sum(g.items,x=>x.a.bal),late:sum(g.items.filter(x=>x.a.late>0&&x.a.bal>0.01),x=>x.a.bal),act:g.cands.filter(isActive).length}))
+    .sort((a,b)=>b.bal-a.bal||a.name.localeCompare(b.name));
+  const q=(U.invQ||'').toLowerCase(),shown=rows.filter(r=>!q||r.name.toLowerCase().includes(q));
+  return head('Invoices & payments','',`<label class="fld" style="min-width:240px"><span>Find a client</span><input class="in" data-f="invq" id="invq" placeholder="Client name" value="${esc(U.invQ||'')}"></label>`)+
+  `<section class="card tbl"><table class="clist"><thead><tr><th>Client</th><th class="n">MSP fee</th><th class="n">Pays in</th><th class="n">Candidates</th><th class="n">Billed 2026</th><th class="n">Received</th><th class="n">Still owed</th><th class="n">Of which late</th><th></th></tr></thead><tbody>
+  ${shown.map(r=>`<tr class="click" data-act="inv-c" data-v="${esc(r.name)}"><td class="nm">${esc(r.name)}</td><td class="n">${pc2(r.cl.msp)}</td><td class="n">${r.cl.terms} days</td><td class="n">${r.cands.length}<div class="sm-t">${r.act} working</div></td><td class="n">${$m(r.billed)}</td><td class="n">${$m(r.got)}</td><td class="n"><b>${r.bal>0.01?$m(r.bal):'—'}</b></td><td class="n">${r.late>0.01?`<span class="lowm">${$m(r.late)}</span>`:'—'}</td><td><button class="btn sm" data-act="inv-c" data-v="${esc(r.name)}">Open</button></td></tr>`).join('')||'<tr><td colspan="9" class="empty">No clients match.</td></tr>'}
+  </tbody><tfoot><tr><td>Total · ${shown.length} clients</td><td></td><td></td><td class="n">${sum(shown,r=>r.cands.length)}</td><td class="n">${$m(sum(shown,r=>r.billed))}</td><td class="n">${$m(sum(shown,r=>r.got))}</td><td class="n">${$m(sum(shown,r=>r.bal))}</td><td class="n">${$m(sum(shown,r=>r.late))}</td><td></td></tr></tfoot></table></section>`;
+};
+const pc2=v=>(v*100).toFixed(2).replace(/\.?0+$/,'')+'%';
+const r4=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4});
+const crumbs=a=>`<nav class="crumbs" aria-label="Breadcrumb">${a.map(([l,act,v],i)=>i<a.length-1?`<button class="lnk" data-act="${act}" data-v="${esc(v||'')}">${esc(l)}</button><span class="mut">›</span>`:`<b>${esc(l)}</b>`).join('')}</nav>`;
+function invClient(all){
+  const cn=U.invC,cl=client(cn),items=all.filter(x=>x.l.c.client===cn);
+  const cands=S.cands.filter(inScope).filter(c=>c.client===cn).sort((a,b)=>(isActive(b)-isActive(a))||a.name.localeCompare(b.name));
+  const rows=cands.map(c=>{const it=items.filter(x=>x.l.name===c.name);return {c,it,hrs:sum(it,x=>x.l.r.hours),billed:sum(it,x=>x.a.bill),got:sum(it,x=>x.a.got),bal:sum(it,x=>x.a.bal),late:it.some(x=>x.a.late>0&&x.a.bal>0.01)}});
+  return crumbs([['All clients','inv-home'],[cn]])+head(esc(cn),'')+
+  `<div class="grid">${tile('Billed 2026',$m(sum(rows,r=>r.billed)),sum(rows,r=>r.it.length)+' weeks')}${tile('Received',$m(sum(rows,r=>r.got)))}${tile('Still owed',$m(sum(rows,r=>r.bal)),'',sum(rows,r=>r.late?1:0)?'alert':'')}</div>
+  <section class="card pad"><h2 style="font-size:15px;margin-bottom:8px">This client's terms (used in every calculation)</h2><div class="terms">
+   <div><span>MSP fee</span><b>${pc2(cl.msp)}</b><small>taken off every bill rate</small></div>
+   <div><span>Pays in</span><b>${cl.terms} days</b><small>after the week ends</small></div>
+   <div><span>Sales commission</span><b>${cl.scomm||0}%</b><small>of profit, to sales</small></div></div></section>
+  <section class="card tbl"><table class="clist"><thead><tr><th>Candidate placed here</th><th>Type</th><th>Status</th><th class="n">Weeks</th><th class="n">Hours</th><th class="n">Billed</th><th class="n">Received</th><th class="n">Still owed</th><th></th></tr></thead><tbody>
+  ${rows.map(r=>`<tr class="click${isActive(r.c)?'':' ended'}" data-act="inv-n" data-v="${esc(r.c.name)}"><td><div class="nm">${esc(r.c.name)}</div><div class="sm-t">${esc(r.c.title&&r.c.title!=='CTOC'?r.c.title:'')}</div></td><td>${pill(r.c.pt,r.c.pt==='W2'?'info':'')}</td><td>${isActive(r.c)?pill('Working','good'):pill('Ended')}<div class="sm-t">${isActive(r.c)?'since '+fd(r.c.start):fd(r.c.start)+' – '+fd(r.c.end)}</div></td><td class="n">${r.it.length}</td><td class="n">${$n(r.hrs,2)}</td><td class="n">${$m(r.billed)}</td><td class="n">${$m(r.got)}</td><td class="n"><b class="${r.late?'lowm':''}">${r.bal>0.01?$m(r.bal):'—'}</b>${r.late?'<div class="sm-t">has late weeks</div>':''}</td><td><button class="btn sm pri" data-act="inv-n" data-v="${esc(r.c.name)}">View</button></td></tr>`).join('')||'<tr><td colspan="9" class="empty">Nobody placed here that you can see.</td></tr>'}
+  </tbody></table></section>`;
+}
+const wkNum=s=>{const d=P(s),y=new Date(d).getUTCFullYear(),j=Date.UTC(y,0,1),off=(new Date(j).getUTCDay()+6)%7;return Math.floor((Math.round((d-j)/864e5)+off)/7)+1};
+const monN=s=>['January','February','March','April','May','June','July','August','September','October','November','December'][s.split('-')[1]-1];
+const cr=(l,h,v,cls='')=>`<div class="cr ${cls}"><span class="l">${l}</span><span class="h">${h}</span><b>${v}</b></div>`;
+const ws=(t,body,note='')=>`<section class="card csec"><h3>${t}</h3><div class="crs">${body}</div>${note?`<div class="wnote">${note}</div>`:''}</section>`;
+function weekCalc(c,x,cl,cycle){
+  const pm=PM();let out='';
+  const h=x.l.t.h,r=x.l.r,n=r.n,L=r.L,msp=cl.msp,LP=S.load[c.pt]??20,t=x.l.t;
+  const H=v=>$n(v,2)+' h';
+  const bt=[['Regular (ST)',c.bST,h[0],n.st],['Overtime (OT)',c.bOT,h[1],n.ot],['Holiday',c.bHol,h[2],n.hol],['On-call',c.bOn,h[3],n.on],['Call-back',c.bCb,h[4],n.cb],['Double time (DT)',c.bHol,h[5],n.hol]];
+  const pt=[['Regular (ST)',c.pST,h[0]],['Overtime (OT)',c.pOT,h[1]],['Holiday',c.pHol,h[2]],['On-call',c.pOn,h[3]],['Call-back',c.pCb,h[4]],['Stipend (per ST hour)',c.stip,h[0]]];
+  const rrRaw=n.st-(c.pST*(1+L)+c.stip),adjBR=n.st*(1-msp)-rrRaw*cl.scomm/100;
+  out+=ws('1 · Timesheet',
+    cr('Week ending',`Week # ${wkNum(x.l.wk)} · ${monN(x.l.wk)} · ${qtr(x.l.wk)}`,fd(x.l.wk))+
+    [['Regular (ST) hours',0],['Overtime (OT) hours',1],['Holiday hours',2],['On-call hours',3],['Call-back hours',4],['Double time (DT) hours',5],['PTO hours',6]].map(([l,i])=>cr(l,'',H(h[i]),h[i]?'':'zero')).join('')+
+    cr('Expense','',$m(t.exp||0),t.exp?'':'zero')+cr('Total hours worked','ST + OT + Holiday + On-call + Call-back + DT',H(r.hours),'tot'));
+  if(pm.bill)out+=ws('2 · Billing (what the client owes)',
+    cr('MSP fee for '+esc(c.client),'Taken off every bill rate',pc2(msp))+
+    bt.filter(([,b,hh])=>b||hh).map(([l,b,hh,nr])=>cr(l,`${$m(b)} − ${pc2(msp)} MSP = ${r4(nr)} × ${H(hh)}`,$m(nr*hh),hh?'':'zero')).join('')+
+    cr('Billing amount','Sum of the lines above (MSP deducted)',$m(r.bill),'tot'),
+    h[5]?'⚠ Workbook rule: double time is billed at the <b>holiday</b> rate. Flagged for the client.':'');
+  if(pm.bill){const rc=t.rcvd,ov=x.a.late;out+=ws('3 · Client payment',
+    cr('Due date',`${fd(x.l.wk)} + ${cl.terms} days (client terms)`,fd(x.l.due))+
+    cr('Received amount',rc?(rc.amt==null?'Full amount (workbook assumes received = billed)':'Entered amount'):'Nothing received yet',$m(x.a.got))+
+    cr('Date received',rc&&rc.date?`${monN(rc.date)} · ${qtr(rc.date)}`:'',rc&&rc.date?fd(rc.date):'—')+
+    cr('Still owed','Billing amount − received',$m(x.a.bal),'tot')+
+    cr('Status',ov?`Today ${fd(ASOF)} − due ${fd(x.l.due)} = ${ov} days overdue`:x.a.st==='Open'?`Not due until ${fd(x.l.due)}`:'',stPill(x.a.st)),
+    rc&&rc.note?'Note: '+esc(rc.note):'');}
+  if(pm.pay)out+=ws('4 · Payroll (what we pay the candidate)',
+    pt.filter(([,p,hh])=>p||hh).map(([l,p,hh])=>cr(l,`${$m(p)} × ${H(hh)}`,$m(p*hh),hh&&p?'':'zero')).join('')+
+    cr('Pay amount','Sum of the lines above',$m(r.pay),'tot')+
+    cr('Employer load',c.pt==='W2'?'Taxes & benefits on W2 pay':'Admin cost on CTOC pay',LP+'%')+
+    cr('Pay date',cycle,fd(x.l.pd)));
+  if(pm.margin){out+=ws('5 · Profit',
+    cr('Regular billing','From section 2',$m(r.billST))+
+    cr('Regular pay with load',`${$m(r.payST)} × (1 + ${LP}%)`,$m(r.payST*(1+L)))+
+    cr('Gross profit (GP)','Regular billing − regular pay with load',$m(r.gp),'tot')+
+    cr('Sales commission',`${cl.scomm||0}% of GP for ${esc(c.client)}`,'− '+$m(r.gp-r.adj))+
+    cr('Adjusted GP','GP − sales commission',$m(r.adj),'tot good')+
+    cr('GP margin (GPM)','GP ÷ regular billing',pct(r.gpm))+
+    cr('Adjusted GPM','Adjusted GP ÷ regular billing',pct(r.billST?r.adj/r.billST*100:0)),
+    '⚠ Workbook rule: profit uses <b>regular hours only</b>. Overtime, holiday, on-call and stipend are not included. Flagged for the client.');
+  out+=ws('6 · Run rate &amp; recruiter',
+    cr('Rate we bill per ST hour','From section 2',r4(n.st))+
+    cr('Loaded pay per hour',`${$m(c.pST)} × (1 + ${LP}%) + ${$m(c.stip)} stipend`,r4(c.pST*(1+L)+c.stip))+
+    cr('Run rate','Rate we bill − loaded pay',r4(rrRaw))+
+    cr('Run rate after sales commission',`× (1 − ${cl.scomm||0}%)  · = recruiter run rate`,r4(r.rr),'tot')+
+    cr('Recruiter weekly spread',`${r4(r.rr)} × (${H(h[0])} ST − ${H(h[6])} PTO)`,$m(r.spread),'tot good')+
+    cr('Adj BR (as in workbook)',`${r4(n.st)} − ${pc2(msp)} again − ${$m(rrRaw*cl.scomm/100)} sales part`,r4(adjBR))+
+    cr('Recruiter GPM','Recruiter run rate ÷ Adj BR',pct(adjBR?r.rr/adjBR*100:0)),
+    '⚠ Workbook rule: Adj BR takes the MSP fee off a second time. Flagged for the client.');}
+  return out;
+}
+function invCand(all){
+  const pm=PM(),c=C[U.invN],cl=client(c.client),it=all.filter(x=>x.l.name===c.name).sort((a,b)=>a.l.wk<b.l.wk?1:-1);
+  const billed=sum(it,x=>x.a.bill),got=sum(it,x=>x.a.got),bal=sum(it,x=>x.a.bal);
+  if(!U.invW||!it.find(x=>x.l.wk===U.invW))U.invW=it[0]&&it[0].l.wk;
+  const x=it.find(y=>y.l.wk===U.invW),sel=it.find(y=>y.l.k===U.arSel);
+  const endD=c.end||ASOF,wks=dd(endD,c.start)/7,who=v=>v&&v!=='Gone'?esc(v):'<span class="mut">Not assigned</span>';
+  const q8=dd(endD,c.start)>=50&&dd(D.runDate,c.start)>=54;
+  const cycle=c.pt==='CTOC'?`CTOC: end of next month + ${cl.terms} days`:c.weekly?'W2 weekly: week ending + 12 days':'W2 bi-weekly: from the Pay Calendar';
+  let out=crumbs([['All clients','inv-home'],[c.client,'inv-c',c.client],[c.name]])+
+  head(esc(c.name),`${esc(c.client)} · ${c.pt} · ${esc(c.title&&c.title!=='CTOC'?c.title:'')}`)+
+  `<div class="grid">${tile('Billed',$m(billed),it.length+' weeks')}${tile('Received',$m(got))}${tile('Still owed',$m(bal),it.filter(y=>y.a.bal>0.01).length+' weeks open',it.some(y=>y.a.late>0&&y.a.bal>0.01)?'alert':'')}${pm.margin?tile('Adj. gross profit',$m(sum(it,y=>y.l.r.adj)),'all weeks'):''}</div>
+  <section class="card csec"><h3>Placement</h3><div class="facts">
+   <div><span>Status</span><b>${isActive(c)?pill('Active','good'):pill('Ended (Termed)')}</b></div>
+   <div><span>Start → end</span><b>${fd(c.start)} → ${c.end?fd(c.end):'still working'}</b></div>
+   <div><span>Weeks from start</span><b>${wks.toFixed(1)}</b><small>(${c.end?'end':'today'} − start) ÷ 7</small></div>
+   <div><span>6-week rule</span><b>${Math.round(wks)>=6?pill('Qualified','good'):pill('Not yet','warn')}</b><small>6+ weeks worked → counts for commission</small></div>
+   <div><span>8-week pay rule</span><b>${q8?pill('Qualified','good'):pill('Not qualified','warn')}</b><small>50+ days worked and started 54+ days before ${fd(D.runDate)}</small></div>
+   <div><span>Pay cycle</span><b>${cycle}</b></div>
+   <div><span>DM · Sales Director</span><b>${who(c.dm)} · ${who(c.sd)}</b></div>
+   <div><span>Sales Lead · Delivery Lead</span><b>${who(c.sl)} · ${who(c.dl)}</b></div>
+   <div><span>Recruiter</span><b>${who(c.rec)}</b></div>
+   <div><span>State · WC code</span><b>${esc(c.state||'—')} · ${esc(c.wc||'—')}</b></div>
+  </div></section>`;
+  if(!x)return out+'<div class="card empty">No billed weeks yet.</div>';
+  const i=it.indexOf(x);
+  out+=`<div class="split"><section class="card wide tbl"><div class="pad" style="border-bottom:1px solid var(--line)"><h2 style="font-size:16px">All weeks</h2><div class="sm-t">Click <b>View</b> on any week to open its full calculation.</div></div><table class="clist"><thead><tr><th>Week ending</th><th class="n">Hours</th><th class="n">Billed</th>${pm.pay?'<th class="n">Pay</th>':''}${pm.margin?'<th class="n">Adj. GP</th><th class="n">GPM</th><th class="n">Spread</th>':''}<th>Due</th><th class="n">Received</th><th class="n">Still owed</th><th>Status</th><th></th></tr></thead><tbody>
+  ${it.map(y=>`<tr class="click ${U.invDr&&y===x?'sel':''}" data-act="inv-view" data-v="${y.l.wk}"><td class="nm">${fd(y.l.wk)}<div class="sm-t">Week ${wkNum(y.l.wk)}</div></td><td class="n">${$n(y.l.r.hours,2)}${y.l.t.h[1]?`<div class="sm-t">${$n(y.l.t.h[1],2)} OT</div>`:''}</td><td class="n"><b>${$m(y.a.bill)}</b></td>${pm.pay?`<td class="n">${$m(y.l.r.pay)}</td>`:''}${pm.margin?`<td class="n gainm">${$m(y.l.r.adj)}</td><td class="n">${pct(y.l.r.gpm)}</td><td class="n">${$m(y.l.r.spread)}</td>`:''}<td>${fd(y.l.due)}</td><td class="n">${y.a.got?$m(y.a.got):'—'}</td><td class="n">${y.a.bal>0.01?$m(y.a.bal):'—'}</td><td>${stPill(y.a.st)}${y.a.late?`<div class="sm-t">${y.a.late} days late</div>`:''}</td><td><div style="display:flex;gap:6px"><button class="btn sm pri" data-act="inv-view" data-v="${y.l.wk}">View</button>${pm.editPay?`<button class="btn sm" data-act="ar-sel" data-k="${esc(y.l.k)}">${y.a.bal>0.01?'Record payment':'Edit payment'}</button>`:''}</div></td></tr>`).join('')}
+  </tbody><tfoot><tr><td>Total · ${it.length} weeks</td><td class="n">${$n(sum(it,y=>y.l.r.hours),2)}</td><td class="n">${$m(billed)}</td>${pm.pay?`<td class="n">${$m(sum(it,y=>y.l.r.pay))}</td>`:''}${pm.margin?`<td class="n">${$m(sum(it,y=>y.l.r.adj))}</td><td></td><td class="n">${$m(sum(it,y=>y.l.r.spread))}</td>`:''}<td></td><td class="n">${$m(got)}</td><td class="n">${$m(bal)}</td><td></td><td></td></tr></tfoot></table></section>
+  ${sel?`<aside class="card pad narrow">${payPanel(sel)}</aside>`:''}</div>`;
+  if(U.invDr)out+=`<div class="dr-bg" data-act="inv-close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-t">
+   <div class="dr-h"><div><div class="sm-t">${esc(c.name)} · ${esc(c.client)}</div><h2 id="dr-t">Week ending ${fd(x.l.wk)}</h2><div class="row" style="gap:6px;margin-top:4px">${stPill(x.a.st)}<span class="sm-t">Billed ${$m(x.a.bill)}${pm.margin?' · Adj. GP '+$m(x.l.r.adj):''}</span></div></div>
+   <button class="btn sm" data-act="inv-close" aria-label="Close">✕ Close</button></div>
+   <div class="dr-nav"><button class="btn sm" data-act="inv-w" data-d="1" ${i===it.length-1?'disabled':''}>← Earlier week</button><span class="sm-t">${it.length-i} of ${it.length}</span><button class="btn sm" data-act="inv-w" data-d="-1" ${i===0?'disabled':''}>Later week →</button></div>
+   <div class="dr-b">${weekCalc(c,x,cl,cycle)}${pm.editPay?`<button class="btn pri" data-act="ar-sel" data-k="${esc(x.l.k)}">${x.a.bal>0.01?'Record payment for this week':'Edit payment'}</button>`:''}</div></aside>`;
+  return out;
+}
+function payPanel(x){const rc=x.l.t.rcvd||{};return `<h2 style="font-size:16px">Record payment</h2><div class="sm-t" style="margin:2px 0 12px">${esc(x.l.c.client)} · ${esc(x.l.name)} · week ending ${fd(x.l.wk)}<br>Billed ${$m(x.a.bill)} · due ${fd(x.l.due)}</div>
+  <form id="payf" style="display:flex;flex-direction:column;gap:10px"><label class="fld"><span>Amount received ($)</span><input class="in" id="pay-amt" inputmode="decimal" value="${(rc.amt??x.a.bill).toFixed(2)}"></label>
+  <label class="fld"><span>Date received</span><input class="in" id="pay-date" type="date" value="${rc.date||ASOF}"></label>
+  <label class="fld"><span>Note</span><input class="in" id="pay-note" placeholder="e.g. 32 approved, 38 billed" value="${esc(rc.note||'')}"></label>
+  <div class="row"><button class="btn pri" type="submit">Save payment</button>${x.l.t.rcvd?'<button class="btn" type="button" data-act="pay-clear">Mark unpaid</button>':''}<button class="btn" type="button" data-act="ar-close">Cancel</button></div></form>`}
+
+const fteSt=f=>{const p=S.fte[f.name];if(p&&p.amt>=f.amount-0.01)return ['Paid','Paid'];if(p)return ['Short paid','Short paid'];return f.due<ASOF?['Overdue',dd(ASOF,f.due)+' days late']:['Not due','due in '+dd(f.due,ASOF)+' days']};
+V.fte=()=>{
+  const pm=PM(),fs=D.fte.filter(fteScope),st=fteSt;
+  const q=(U.fteQ||'').toLowerCase(),shown=fs.filter(f=>!q||(f.name+' '+f.client+' '+f.rec).toLowerCase().includes(q));
+  let out=head('Direct hires (FTE)','',`<label class="fld" style="min-width:240px"><span>Find a hire</span><input class="in" data-f="fteq" id="fteq" placeholder="Name, client or recruiter" value="${esc(U.fteQ||'')}"></label>`)+
+  `<div class="grid">${tile('Fees invoiced',$m(sum(fs,f=>f.amount),0),fs.length+' hires')}${tile('Collected',$m(sum(fs,f=>S.fte[f.name]?S.fte[f.name].amt:0),0))}${tile('Overdue',$m(sum(fs.filter(f=>st(f)[0]==='Overdue'),f=>f.amount),0),'',fs.some(f=>st(f)[0]==='Overdue')?'alert':'')}</div>
+  <div class="card tbl"><table class="clist"><thead><tr><th>Hire</th><th>Client</th><th class="n">Salary</th><th class="n">Fee %</th><th class="n">Fee</th><th>Due</th><th>Status</th><th>60-day guarantee</th><th>Recruiter</th><th></th></tr></thead><tbody>
+  ${shown.map(f=>{const s=st(f),w=dd(addD(f.start,60),ASOF);return `<tr class="click ${U.fteDr&&U.fteSel===f.name?'sel':''}" data-act="fte-view" data-n="${esc(f.name)}"><td><div class="nm">${esc(f.name)}</div><div class="sm-t">${esc(f.title||'—')} · started ${fd(f.start)}</div></td><td>${esc(f.client)}</td><td class="n">${$m(f.salary,0)}</td><td class="n">${pc2(f.pct)}</td><td class="n"><b>${$m(f.amount)}</b></td><td>${fd(f.due)}</td><td>${stPill(s[0])}<div class="sm-t">${s[1]}</div></td><td>${w>=0?pill(w+' days left','warn'):'<span class="sm-t">Ended '+fd(addD(f.start,60))+'</span>'}</td><td>${esc(f.rec)}</td>
+  <td><div style="display:flex;gap:6px"><button class="btn sm pri" data-act="fte-view" data-n="${esc(f.name)}">View</button>${pm.editPay&&s[0]!=='Paid'?`<button class="btn sm" data-act="fte-pay" data-n="${esc(f.name)}">Mark paid</button>`:''}</div></td></tr>`}).join('')||'<tr><td colspan="10" class="empty">No hires match.</td></tr>'}
+  </tbody><tfoot><tr><td>Total · ${shown.length} hires</td><td></td><td class="n">${$m(sum(shown,f=>f.salary),0)}</td><td></td><td class="n">${$m(sum(shown,f=>f.amount))}</td><td colspan="5"></td></tr></tfoot></table></div>`;
+  const f=U.fteDr&&shown.find(x=>x.name===U.fteSel);
+  if(f){const i=shown.indexOf(f);out+=`<div class="dr-bg" data-act="fte-close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-t">
+   <div class="dr-h"><div><div class="sm-t">Direct hire · ${esc(f.client)}</div><h2 id="dr-t">${esc(f.name)}</h2><div class="row" style="gap:6px;margin-top:4px">${stPill(st(f)[0])}<span class="sm-t">Fee ${$m(f.amount)}</span></div></div>
+   <button class="btn sm" data-act="fte-close" aria-label="Close">✕ Close</button></div>
+   <div class="dr-nav"><button class="btn sm" data-act="fte-step" data-d="-1" ${i===0?'disabled':''}>← Previous hire</button><span class="sm-t">${i+1} of ${shown.length}</span><button class="btn sm" data-act="fte-step" data-d="1" ${i===shown.length-1?'disabled':''}>Next hire →</button></div>
+   <div class="dr-b">${fteCalc(f)}${pm.editPay&&st(f)[0]!=='Paid'?`<button class="btn pri" data-act="fte-pay" data-n="${esc(f.name)}">Mark fee as paid</button>`:''}</div></aside>`}
+  return out;
+};
+function fteCalc(f){
+  const gross=f.salary*f.pct,mspAmt=gross*f.msp,calcd=gross-mspAmt,diff=Math.abs(calcd-f.amount)>0.05;
+  const due90=addD(f.inv,90),dueDiff=due90!==f.due,p=S.fte[f.name],paid=p?p.amt:0,owed=Math.max(0,f.amount-paid),s=fteSt(f);
+  const gEnd=addD(f.start,60),gLeft=dd(gEnd,ASOF);
+  return ws('1 · Hire details',
+    cr('Candidate','',esc(f.name))+cr('Client','',esc(f.client))+cr('Job title','',esc(f.title||'—'),f.title?'':'zero')+
+    cr('Recruiter','',esc(f.rec))+cr('Start date','First day at the client',fd(f.start))+cr('Invoice date','Date the fee was invoiced',fd(f.inv))+
+    cr('PO # · Invoice #','Not filled in the workbook yet','—','zero'))+
+  ws('2 · Placement fee',
+    cr('Annual salary','Agreed with the client',$m(f.salary))+
+    cr('Fee %','Agreed placement fee',pc2(f.pct))+
+    cr('Gross fee',`${$m(f.salary)} × ${pc2(f.pct)}`,$m(gross))+
+    cr('MSP fee',`${$m(gross)} × ${pc2(f.msp)}`,'− '+$m(mspAmt),f.msp?'':'zero')+
+    cr('Fee we invoice','Gross fee − MSP fee',$m(calcd),'tot good')+
+    (diff?cr('Amount on the sheet','Typed in by hand, not from the formula',$m(f.amount),'tot'):''),
+    diff?`⚠ The sheet's amount (${$m(f.amount)}) is not the same as salary × fee % − MSP (${$m(calcd)}). The app uses the sheet's amount. Ask the client which is right.`:'')+
+  ws('3 · Client payment',
+    cr('Due date',`${fd(f.inv)} (invoice date) + 90 days${dueDiff?` = ${fd(due90)}; sheet says ${fd(f.due)}`:''}`,fd(f.due))+
+    cr('Amount due','From section 2',$m(f.amount))+
+    cr('Paid amount',p?`Received ${p.date?fd(p.date):''}`:'Nothing received yet',$m(paid))+
+    cr('Still owed','Amount due − paid',$m(owed),'tot')+
+    cr('Status',s[0]==='Overdue'?`Today ${fd(ASOF)} − due ${fd(f.due)} = ${s[1]}`:s[1],stPill(s[0]))+
+    cr('Quarter · Month','Of the due date',`${qtr(f.due)} · ${monN(f.due)}`),
+    dueDiff?'⚠ This due date was typed in by hand and differs from the sheet\'s "invoice date + 90 days" rule.':'')+
+  ws('4 · 60-day guarantee (warranty)',
+    cr('Guarantee ends',`${fd(f.start)} (start) + 60 days`,fd(gEnd))+
+    cr('Days left',`${fd(gEnd)} − today ${fd(ASOF)}`,gLeft>=0?gLeft+' days':'Ended '+(-gLeft)+' days ago','tot')+
+    cr('What it means','If the hire leaves before the guarantee ends, the fee may have to be refunded or the role refilled',gLeft>=0?pill('In guarantee','warn'):pill('Fee is safe','good')));
+}
+
+V.payroll=()=>{
+  const pm=PM(),dates=[...new Set(L.filter(l=>l.r.pay>0).map(l=>l.pd))].sort();
+  if(!dates.includes(U.payDate))U.payDate=dates.filter(d=>d<=ASOF).pop()||dates[0];
+  const d=U.payDate,locked=S.locks['pay|'+d];
+  const grp=pt=>{const m={};L.filter(l=>l.pd===d&&l.c.pt===pt&&l.r.pay>0).forEach(l=>{(m[l.name]=m[l.name]||{c:l.c,ls:[]}).ls.push(l)});return Object.values(m).sort((a,b)=>sum(b.ls,l=>l.r.pay)-sum(a.ls,l=>l.r.pay))};
+  const w2=grp('W2'),ct=grp('CTOC'),chk=S.check[d]||[];
+  const ITEMS=['New hires added in ADP','Terminations processed','Workers\' comp codes checked','QuickBooks check deposits','Job description training','Mail actions','W2 address updates'];
+  const W2T=payTable(L.filter(l=>l.pd===d&&l.c.pt==='W2'&&l.r.pay>0),{adp:1,d,ro:locked||!pm.editHours,empty:'No W2 pay on this date.'}),allMatch=W2T.adpAll;
+  const CTT=payTable(L.filter(l=>l.pd===d&&l.c.pt==='CTOC'&&l.r.pay>0),{});
+  const allChk=ITEMS.every((_,i)=>chk[i]);
+  return head('Payroll','',
+    paySel(dates))+
+  `${locked&&locked.at?`<div class="sm-t">Pay run closed by ${esc(locked.by)} on ${fd(locked.at)}.</div>`:''}
+  <div style="display:flex;flex-direction:column;gap:16px"><div class="pdbar"><div><span class="sm-t">Pay date</span><b>${fd(d)}</b></div><div><span class="sm-t">W2 work weeks paid (Mon – Sun)</span><b>${pdWeeks(d,1)}</b></div>${ct.length?`<div><span class="sm-t">Also paid: CTOC vendors</span><b>${ct.length} for older weeks</b></div>`:''}</div><h2 style="font-size:16px">W2 payroll · pay date ${fd(d)}</h2>${W2T.html}
+  ${ct.length?`<h2 style="font-size:16px">CTOC vendor payments · ${fd(d)}</h2>${CTT.html}`:''}</div>
+  <div class="split">  <aside class="card pad wide" style="display:flex;flex-direction:column;gap:6px"><h2 style="font-size:16px;margin-bottom:4px">Before you close</h2>
+  ${ITEMS.map((t,i)=>`<label class="chk"><input type="checkbox" data-f="chk" data-i="${i}" ${chk[i]?'checked':''} ${locked||!pm.editHours?'disabled':''}>${t}</label>`).join('')}
+  <div style="height:6px"></div>${locked?'<span class="lock">✓ Pay run closed</span>':`<button class="btn pri" data-act="pay-close" ${allMatch&&allChk&&pm.editHours?'':'disabled'}>Close pay run</button><span class="sm-t">${!allMatch?'Enter ADP hours for every person; all must match.':!allChk?'Tick every checklist item.':'Ready to close.'}</span>`}
+  <div class="note" style="margin-top:8px">W2 pay dates come from the Pay Calendar (bi-weekly). People marked “paid weekly” get paid 12 days after the week ends. CTOC is paid at the end of the next month plus the client's terms.</div></aside></div>
+  <div class="sm-t">Past pay runs and totals by week or date range are under <a href="#payhist">Pay history</a>.</div>`;
+};
+
+function pdWeeks(d,long){const all=L.filter(l=>l.pd===d&&l.r.pay>0),w2=all.filter(l=>l.c.pt==='W2'),src=w2.length?w2:all,wk=[...new Set(src.map(l=>l.wk))].sort();if(!wk.length)return '';
+  const r=w=>{const a=addD(w,-6);return fds(a)+' – '+fds(w)};
+  if(wk.length<=2||long)return wk.length>3?`${wk.length} weeks: ${fds(addD(wk[0],-6))} – ${fd(wk[wk.length-1])}`:wk.map(r).join(' & ')+(long?`, ${wk[wk.length-1].slice(0,4)} (${wk.length} week${wk.length>1?'s':''})`:'');
+  return `${wk.length} weeks: ${fds(addD(wk[0],-6))} – ${fds(wk[wk.length-1])}`}
+function payTable(ls,o={}){
+  const m={};ls.forEach(l=>{(m[l.name]=m[l.name]||{c:l.c,ls:[]}).ls.push(l)});
+  const g=Object.values(m).sort((a,b)=>String(a.c.dept||'').localeCompare(String(b.c.dept||''),undefined,{numeric:false})||a.c.name.localeCompare(b.c.name));
+  g.forEach(x=>x.ls.sort((a,b)=>a.wk<b.wk?-1:1));
+  const V=l=>{const h=l.t.h,c=l.c;return [h[0],h[1],h[2],h[3],h[4],h[5],h[6],l.t.exp||0,h[0]*c.pST,h[1]*c.pOT,h[2]*c.pHol,h[3]*c.pOn,h[4]*c.pCb,l.r.stipAmt,l.r.pay,(l.r.pay-l.r.stipAmt)*l.r.L]};
+  const add=(a,b)=>a.map((v,i)=>v+b[i]),Z=Array(16).fill(0);
+  const hc=v=>v?$n(v):'<span class="z">0</span>',mc=v=>v?$m(v):'<span class="z">$0.00</span>';
+  const cells=v=>v.slice(0,7).map(x=>`<td class="n">${hc(x)}</td>`).join('')+`<td class="n">${mc(v[7])}</td>`+v.slice(8,14).map(x=>`<td class="n">${mc(x)}</td>`).join('')+`<td class="n"><b>${$m(v[14])}</b></td>`+(o.cost?`<td class="n">${$m(v[15])}</td><td class="n">${$m(v[14]+v[15])}</td>`:'');
+  let grand=Z,rows='',adpAll=true;
+  g.forEach(x=>{
+    let st=Z;const c=x.c;
+    x.ls.forEach((l,i)=>{const v=V(l);st=add(st,v);if(o.weeks!==false)rows+=`<tr class="wkr"><td class="sm-t">${i?'':esc(c.dept||'—')}</td><td>${i?'':`<span class="nm">${esc(c.name)}</span>`}</td><td>${i?'':esc(c.client)}</td><td>${fd(l.wk)}${o.showPd?`<div class="sm-t">paid ${fd(l.pd)}</div>`:''}</td><td class="n">${$m(c.pST)}</td>${cells(v)}${o.adp?'<td></td><td></td>':''}${o.view?'<td></td>':''}</tr>`});
+    grand=add(grand,st);
+    let adp='';if(o.adp){const a=S.adp[o.d+'|'+c.name],diff=a==null||a===''?null:(st[0]+st[1]+st[2]+st[3]+st[4]+st[5])-(+a);if(diff===null||Math.abs(diff)>0.001)adpAll=false;
+      adp=`<td class="n"><input class="in h" data-f="adp" data-n="${esc(c.name)}" aria-label="ADP hours for ${esc(c.name)}" value="${a??''}" ${o.ro?'readonly':''}></td><td class="n">${diff===null?'<span class="mut">—</span>':Math.abs(diff)<0.001?pill('match','good'):pill((diff>0?'+':'')+$n(diff),'bad')}</td>`}
+    rows+=`<tr class="ptot${o.view?' click':''}" ${o.view?`data-act="py-view" data-n="${esc(c.name)}"`:''}><td class="sm-t">${o.weeks===false?esc(c.dept||'—'):''}</td><td colspan="2"><b>${esc(c.name)} Total</b>${o.weeks===false?`<div class="sm-t">${esc(c.client)}</div>`:''}</td><td class="sm-t">${x.ls.length} week${x.ls.length>1?'s':''}</td><td class="n sm-t">${$m(c.pST)}</td>${cells(st)}${adp}${o.view?`<td><button class="btn sm pri" data-act="py-view" data-n="${esc(c.name)}">View</button></td>`:''}</tr>`;
+  });
+  const nc=5+16-1+(o.cost?2:0)+(o.adp?2:0)+(o.view?1:0)-(o.cost?0:0);
+  const head=`<thead><tr><th>Dept</th><th>Name</th><th>Client</th><th>Week ending</th><th class="n">Pay rate</th><th class="n">ST hours</th><th class="n">OT hours</th><th class="n">Holiday hours</th><th class="n">On-call hours</th><th class="n">Call-back hours</th><th class="n">DT hours</th><th class="n">PTO</th><th class="n">Expense</th><th class="n">ST pay</th><th class="n">OT pay</th><th class="n">Holiday pay</th><th class="n">On-call pay</th><th class="n">Call-back pay</th><th class="n">Stipend pay</th><th class="n">Gross pay (PR amount)</th>${o.cost?'<th class="n">Employer load</th><th class="n">Total cost</th>':''}${o.adp?'<th class="n">ADP hours</th><th class="n">Check</th>':''}${o.view?'<th></th>':''}</tr></thead>`;
+  const body=g.length?rows:`<tr><td colspan="30" class="empty">${o.empty||'No pay here.'}</td></tr>`;
+  const foot=g.length?`<tfoot><tr><td colspan="4">Grand Total · ${g.length} people</td><td></td>${cells(grand)}${o.adp?'<td></td><td></td>':''}${o.view?'<td></td>':''}</tr></tfoot>`:'';
+  return {html:`<div class="card tbl ptab"><table>${head}<tbody>${body}</tbody>${foot}</table></div>`,adpAll:adpAll&&g.length>0,g,grand};
+}
+const payTabs=()=>'';
+function paySel(dates){return `<label class="fld"><span>Pay date</span><select class="in" data-f="payd" style="max-width:min(100%,460px)">${dates.map(x=>`<option value="d:${x}" ${x===U.payDate?'selected':''}>${fd(x)} · ${pdWeeks(x)}${L.some(l=>l.pd===x&&l.c.pt==='W2')?'':' (CTOC only)'}${x>ASOF?' (upcoming)':''}</option>`).join('')}</select></label>`}
+V.payhist=()=>{const m=U.phMode||'runs';
+  const sel=`<label class="fld"><span>Show</span><select class="in" data-f="phm" style="width:auto">${[['runs','All pay runs'],['week','One week'],['all','All time'],['range','Date range']].map(([k,l])=>`<option value="${k}" ${m===k?'selected':''}>${l}</option>`).join('')}</select></label>`;
+  if(m==='runs')return head('Pay history','',sel)+V_payHist();
+  U.pyMode=m;return head('Pay history','',sel)+V_payPeriod()};
+const payParts=l=>{const h=l.t.h,c=l.c;return {st:h[0],ot:h[1],oth:h[2]+h[3]+h[4],stp:h[0]*c.pST,otp:h[1]*c.pOT,othp:h[2]*c.pHol+h[3]*c.pOn+h[4]*c.pCb,stip:l.r.stipAmt,gross:l.r.pay,load:(l.r.pay-l.r.stipAmt)*l.r.L}};
+function payRange(){
+  const m=U.pyMode;if(m==='all')return [null,null,'All time'];
+  if(m==='week'){const to=U.pyWk,from=addD(to,-6);return [from,to,fd(from)+' – '+fd(to)]}
+  const f=U.pyFrom||null,t=U.pyTo||null;return [f,t,(f?fd(f):'Start')+' – '+(t?fd(t):'today')];
+}
+function V_payPeriod(){
+  const pm=PM(),[from,to,lab]=payRange(),basis=U.pyBasis,q=(U.pyQ||'').toLowerCase();
+  const ls=L.filter(l=>l.r.pay>0).filter(l=>{const d=basis==='pd'?l.pd:l.wk;return (!from||d>=from)&&(!to||d<=to)}).filter(l=>U.pyT==='all'||l.c.pt===U.pyT);
+  const m={};ls.forEach(l=>{(m[l.name]=m[l.name]||{c:l.c,ls:[]}).ls.push(l)});
+  const g=Object.values(m).filter(x=>!q||(x.c.name+' '+x.c.client).toLowerCase().includes(q)).sort((a,b)=>a.c.name.localeCompare(b.c.name));
+  const PT=payTable(ls.filter(l=>!q||(l.c.name+' '+l.c.client).toLowerCase().includes(q)),{cost:1,view:1,weeks:U.pyRows!=='tot',showPd:basis==='wk',empty:'No pay in this period.'});
+  const wkSel=`<label class="fld"><span>Week ending (Sunday)</span><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-act="py-wk" data-d="-1" aria-label="Previous week">←</button><select class="in" data-f="pywk" style="width:auto">${WEEKS.map(w=>`<option value="${w}" ${w===U.pyWk?'selected':''}>${fd(w)}</option>`).join('')}</select><button class="btn sm" data-act="py-wk" data-d="1" aria-label="Next week">→</button></div></label>`;
+  const rng=`<label class="fld"><span>From</span><input class="in" type="date" data-f="pyfrom" value="${U.pyFrom||''}"></label><label class="fld"><span>To</span><input class="in" type="date" data-f="pyto" value="${U.pyTo||''}"></label>`;
+  let out=`<section class="card pad" style="display:flex;flex-direction:column;gap:12px">
+   <div class="row" style="justify-content:space-between;align-items:flex-end;gap:14px">
+    ${U.pyMode==='week'?wkSel:U.pyMode==='range'?`<div class="row" style="align-items:flex-end">${rng}</div>`:''}
+    <div class="fld"><span>Count by</span><div class="chips">${[['pd','Pay date'],['wk','Week worked']].map(([k,l])=>`<button class="chip ${basis===k?'on':''}" data-act="py-basis" data-v="${k}">${l}</button>`).join('')}</div></div>
+    <div class="fld"><span>Type</span><div class="chips">${[['all','All'],['W2','W2'],['CTOC','CTOC']].map(([k,l])=>`<button class="chip ${U.pyT===k?'on':''}" data-act="py-t" data-v="${k}">${l}</button>`).join('')}</div></div>
+    <div class="fld"><span>Rows</span><div class="chips">${[['wk','Each week'],['tot','Person totals']].map(([k,l])=>`<button class="chip ${(U.pyRows||'wk')===k?'on':''}" data-act="py-rows" data-v="${k}">${l}</button>`).join('')}</div></div>
+    <label class="fld" style="min-width:200px"><span>Find a person</span><input class="in" id="pyq" data-f="pyq" placeholder="Name or client" value="${esc(U.pyQ||'')}"></label>
+   </div><div class="sm-t">Showing <b>${lab}</b> · by ${basis==='pd'?'pay date (when the money goes out)':'week worked (week ending date)'} · ${g.length} people · ${ls.length} weeks of pay</div></section>
+  <div class="grid">${tile('People paid',g.length)}${tile('Hours',$n(sum(ls,l=>l.r.hours)))}${tile('Gross pay',$m(sum(ls,l=>l.r.pay)))}${tile('Employer cost (load)',$m(sum(ls,l=>payParts(l).load)),'taxes & benefits on top')}</div>
+  ${PT.html}`;
+  const x=U.pyDr&&g.find(y=>y.c.name===U.pySel);
+  if(x){const i=g.indexOf(x),c=x.c,LP=S.load[c.pt]??20,ws2=x.ls.slice().sort((a,b)=>a.wk<b.wk?1:-1);
+    out+=`<div class="dr-bg" data-act="py-close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-t">
+    <div class="dr-h"><div><div class="sm-t">Payroll · ${esc(lab)}</div><h2 id="dr-t">${esc(c.name)}</h2><div class="sm-t" style="margin-top:4px">${c.pt} · ${esc(c.client)} · ${c.pt==='CTOC'?'paid as vendor':c.weekly?'paid weekly':'paid bi-weekly'}</div></div><button class="btn sm" data-act="py-close" aria-label="Close">✕ Close</button></div>
+    <div class="dr-nav"><button class="btn sm" data-act="py-step" data-d="-1" ${i===0?'disabled':''}>← Previous person</button><span class="sm-t">${i+1} of ${g.length}</span><button class="btn sm" data-act="py-step" data-d="1" ${i===g.length-1?'disabled':''}>Next person →</button></div>
+    <div class="dr-b">${ws('Pay rates',cr('Regular','per hour',$m(c.pST))+cr('Overtime','per hour',$m(c.pOT),c.pOT?'':'zero')+cr('Holiday · On-call · Call-back','per hour',`${$m(c.pHol)} · ${$m(c.pOn)} · ${$m(c.pCb)}`,c.pHol||c.pOn||c.pCb?'':'zero')+cr('Stipend','per regular hour',$m(c.stip),c.stip?'':'zero')+cr('Employer load',c.pt==='W2'?'taxes & benefits':'admin cost',LP+'%'))}
+    ${ws2.map(l=>{const p=payParts(l),h=l.t.h;return ws(`Week ending ${fd(l.wk)} <span class="sm-t" style="font-weight:400">· paid ${fd(l.pd)}</span>`,
+      (h[0]?cr('Regular',`${$n(h[0])} h × ${$m(c.pST)}`,$m(p.stp)):'')+(h[1]?cr('Overtime',`${$n(h[1])} h × ${$m(c.pOT)}`,$m(p.otp)):'')+(h[2]?cr('Holiday',`${$n(h[2])} h × ${$m(c.pHol)}`,$m(h[2]*c.pHol)):'')+(h[3]?cr('On-call',`${$n(h[3])} h × ${$m(c.pOn)}`,$m(h[3]*c.pOn)):'')+(h[4]?cr('Call-back',`${$n(h[4])} h × ${$m(c.pCb)}`,$m(h[4]*c.pCb)):'')+(p.stip?cr('Stipend',`${$n(h[0])} h × ${$m(c.stip)}`,$m(p.stip)):'')+
+      cr('Gross pay','Sum of the lines above',$m(p.gross),'tot')+cr('Employer load',`${$m(p.gross-p.stip)} × ${LP}% (stipend not loaded)`,$m(p.load))+cr('Total cost to us','Gross pay + load',$m(p.gross+p.load),'tot good'))}).join('')}
+    ${ws('Total for this period',cr('Weeks','',ws2.length)+cr('Hours','',$n(sum(ws2,l=>l.r.hours)))+cr('Gross pay','',$m(sum(ws2,l=>l.r.pay)),'tot')+cr('Total cost to us','Gross pay + load',$m(sum(ws2,l=>payParts(l).gross+payParts(l).load)),'tot good'))}</div></aside>`}
+  return out;
+}
+function V_payHist(){
+  const dates=[...new Set(L.filter(l=>l.r.pay>0).map(l=>l.pd))].sort().reverse();
+  const rows=dates.map(d=>{const ls=L.filter(l=>l.pd===d&&l.r.pay>0),w2=ls.filter(l=>l.c.pt==='W2'),ct=ls.filter(l=>l.c.pt==='CTOC');
+    const ppl=[...new Set(w2.map(l=>l.name))],matched=ppl.filter(n=>{const a=S.adp[d+'|'+n];return a!=null&&a!==''&&Math.abs(sum(w2.filter(l=>l.name===n),l=>l.r.hours)-a)<0.001}).length;
+    const chk=(S.check[d]||[]).filter(Boolean).length,lk=S.locks['pay|'+d];
+    const st=lk?pill('Closed','good'):d>ASOF?pill('Upcoming','info'):pill('Open','warn');
+    return {d,ls,w2,ct,ppl,matched,chk,lk,st,wks:[...new Set(ls.map(l=>l.wk))].sort()}});
+  return `<div class="card tbl"><table class="clist"><thead><tr><th>Pay date</th><th>Weeks covered</th><th class="n">W2 people</th><th class="n">W2 hours</th><th class="n">W2 gross pay</th><th class="n">CTOC payments</th><th>ADP hours check</th><th>Checklist</th><th>Status</th><th></th></tr></thead><tbody>
+  ${rows.map(r=>`<tr class="click" data-act="py-open" data-v="${r.d}"><td class="nm">${fd(r.d)}</td><td class="sm-t">${r.wks.map(fds).join(', ')}</td><td class="n">${r.ppl.length}</td><td class="n">${$n(sum(r.w2,l=>l.r.hours))}</td><td class="n">${$m(sum(r.w2,l=>l.r.pay))}</td><td class="n">${r.ct.length?$m(sum(r.ct,l=>l.r.pay)):'—'}</td><td>${r.ppl.length?(r.matched===r.ppl.length?pill('All match','good'):`<span class="sm-t">${r.matched} of ${r.ppl.length} matched</span>`):'—'}</td><td class="sm-t">${r.chk} of 7</td><td>${r.st}${r.lk&&r.lk.at?`<div class="sm-t">${esc(r.lk.by)} · ${fd(r.lk.at)}</div>`:''}</td><td><button class="btn sm" data-act="py-open" data-v="${r.d}">Open</button></td></tr>`).join('')}
+  </tbody><tfoot><tr><td>Total · ${rows.length} pay dates</td><td></td><td></td><td class="n">${$n(sum(rows,r=>sum(r.w2,l=>l.r.hours)))}</td><td class="n">${$m(sum(rows,r=>sum(r.w2,l=>l.r.pay)))}</td><td class="n">${$m(sum(rows,r=>sum(r.ct,l=>l.r.pay)))}</td><td colspan="4"></td></tr></tfoot></table></div>
+  <div class="sm-t">${rows.filter(r=>r.lk).length} closed · ${rows.filter(r=>!r.lk&&r.d<=ASOF).length} still open · ${rows.filter(r=>r.d>ASOF).length} upcoming. Click a pay date to open that pay run.</div>`;
+}
+const tierLab=i=>'$'+D.grid.gpTiers[i]+(i<5?'–'+(D.grid.gpTiers[i+1]-0.01).toFixed(2):'+');
+const bandLab=i=>'Band '+(i+1)+' ('+$m(D.grid.spread[i],0)+(i<4?'–'+$m(D.grid.spread[i+1]-1,0):'+')+')';
+const recGPM=c=>{const cl=client(c.client),r=calc(c,ZERO),n=r.n,L=r.L,raw=n.st-(c.pST*(1+L)+c.stip),adj=n.st*(1-cl.msp)-raw*cl.scomm/100;return adj?r.rr/adj*100:0};
+function cmFull(x,data,monSel,locked){
+  const f=U.cmF||'all',ls=x.lines.filter(l=>f==='all'||(f==='q'?l.elig:!l.elig)),i=data.indexOf(x);
+  const used=new Set();x.lines.forEach(l=>l.weeks.forEach((w,k)=>{if(w)used.add(x.band[k]+'-'+l.tier)}));
+  const grid=`<div class="tbl"><table class="mgrid"><thead><tr><th>Band · weekly spread</th>${D.grid.gpTiers.map((t,j)=>`<th class="n">${tierLab(j)}</th>`).join('')}</tr></thead><tbody>${D.grid.gp.map((row,b)=>`<tr><td class="sm-t">${bandLab(b)}</td>${row.map((v,j)=>`<td class="n ${used.has(b+'-'+j)?'hit':''}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  let rows='',G={st:0,pto:0,sp:0,cm:0,n:0};
+  ls.forEach(l=>{const c=l.c;let T={st:0,pto:0,sp:0,cm:0,n:0},first=true;
+    x.wks.forEach((w,k)=>{const wk=l.weeks[k];if(!wk)return;const h=S.ts[c.name+'|'+w].h;T.st+=h[0];T.pto+=h[6];T.sp+=wk.spread;T.cm+=wk.comm;T.n++;
+      rows+=`<tr class="wkr"><td>${first?`<span class="nm">${esc(c.name)}</span>`:''}</td><td>${first?esc(c.client):''}</td><td class="sm-t">${first?fd(c.start):''}</td><td class="sm-t">${first?(c.end?fd(c.end):'—'):''}</td><td>${first?(l.elig?pill('Qualified','good'):pill('Not qualified','warn')):''}</td><td class="n sm-t">${first?pct(recGPM(c)):''}</td><td class="n">${first?r4(l.rr):''}</td><td>${first?tierLab(l.tier):''}</td>
+      <td>${fd(w)}</td><td class="n">${wkNum(w)}</td><td class="n">${$n(h[0])}</td><td class="n">${h[6]?$n(h[6]):'<span class="z">0</span>'}</td><td class="n">${$m(wk.spread)}</td><td class="n sm-t">${$m(x.weekTot[k])}</td><td>Band ${x.band[k]+1}</td><td class="n">× ${wk.rate}${S.unit==='pct'?'%':''}</td><td class="n">${l.elig?$m(wk.comm):'<span class="z">$0.00</span>'}</td></tr>`;first=false});
+    if(!T.n)return;G.st+=T.st;G.pto+=T.pto;G.sp+=T.sp;G.cm+=T.cm;G.n+=T.n;
+    rows+=`<tr class="ptot"><td colspan="8"><b>${esc(c.name)} Total</b></td><td class="sm-t">${T.n} week${T.n>1?'s':''}</td><td></td><td class="n">${$n(T.st)}</td><td class="n">${$n(T.pto)}</td><td class="n"><b>${$m(T.sp)}</b></td><td></td><td></td><td></td><td class="n"><b class="gainm">${$m(T.cm)}</b></td></tr>`});
+  const bs=x.wks.map((w,k)=>`<div class="bandwk"><span class="sm-t">${fds(w)} · wk ${wkNum(w)}</span><b>${$m(x.weekTot[k])}</b>${x.weekTot[k]>0?pill('Band '+(x.band[k]+1),'info'):'<span class="sm-t">no hours</span>'}</div>`).join('');
+  return `<nav class="crumbs" aria-label="Breadcrumb"><button class="lnk" data-act="cm-close">All recruiters</button><span class="mut">›</span><b>${esc(x.R)}</b></nav>`+
+  head(esc(x.R)+' · commission',`${monLabel(U.mon)} · ${ls.length} placement${ls.length===1?'':'s'}${locked?' · ✓ month approved & locked':''}`,
+   `${monSel}<div class="fld"><span>Placements</span><div class="chips">${[['all','All'],['q','Qualified'],['nq','Not qualified']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" data-act="cm-f" data-v="${k}">${l}</button>`).join('')}</div></div>
+   <div class="row" style="gap:6px"><button class="btn sm" data-act="cm-step" data-d="-1" ${i===0?'disabled':''}>← Previous recruiter</button><button class="btn sm" data-act="cm-step" data-d="1" ${i===data.length-1?'disabled':''}>Next recruiter →</button></div>`)+
+  `<section class="card pad"><div class="sm-t" style="margin-bottom:8px">Recruiter's total spread each week → band (all placements added up)</div><div class="bandrow">${bs}<div class="bandwk bandtot"><span class="sm-t">Month total · ${x.wks.length} weeks</span><b>${$m(sum(x.weekTot,v=>v))}</b><span class="sm-t">Commission <b class="gainm">${$m(x.comm)}</b></span></div></div></section>
+  <div class="card tbl ptab cmtab"><table><thead><tr><th>Placement</th><th>Client</th><th>Start date</th><th>End date</th><th>6 weeks criteria</th><th class="n">Recruiter GPM</th><th class="n">Recruiter run rate</th><th>Tier</th><th>Week ending</th><th class="n">Week #</th><th class="n">ST hours</th><th class="n">PTO</th><th class="n">Weekly spread</th><th class="n">Recruiter week total</th><th>Band</th><th class="n">Rate</th><th class="n">Commission</th></tr></thead>
+  <tbody>${rows||'<tr><td colspan="17" class="empty">No placements match this filter.</td></tr>'}</tbody>
+  ${G.n?`<tfoot><tr><td colspan="8">Grand Total · ${ls.length} placements</td><td>${G.n} weeks</td><td></td><td class="n">${$n(G.st)}</td><td class="n">${$n(G.pto)}</td><td class="n">${$m(G.sp)}</td><td></td><td></td><td></td><td class="n">${$m(G.cm)}</td></tr></tfoot>`:''}</table></div>
+  <div class="sm-t">Weekly spread = recruiter run rate × (ST hours − PTO). Commission = weekly spread × rate${S.unit==='pct'?' %':''} from the grid below (band × tier). Placements under 6 weeks add to the band but earn no commission yet.</div>
+  <section class="card pad" style="display:flex;flex-direction:column;gap:8px"><h2 style="font-size:16px">Commission grid · rates used this month highlighted</h2>${grid}<div class="sm-t">Open question for the client: the workbook treats the rate as a multiplier (× 1.71); it may be meant as a percent.</div></section>`;
+}
+V.commission=()=>{
+  const pm=PM(),r=role(),months=[...new Set(WEEKS.filter(w=>w<=LAST_WK).map(w=>w.slice(0,7)))];
+  let data=commission(U.mon);
+  if(['rec','lead'].includes(r.kind))data=data.filter(x=>x.R===r.p);
+  const locked=S.locks['comm|'+U.mon],unit=S.unit==='mult'?'multiplier':'percent';
+  const monSel=`<label class="fld"><span>Month</span><select class="in" data-f="mon">${months.map(m=>`<option value="${m}" ${m===U.mon?'selected':''}>${monLabel(m)}</option>`).join('')}</select></label>`;
+  const sx=U.cmDr&&data.find(y=>y.R===U.cmSel);if(sx)return cmFull(sx,data,monSel,locked);
+  let out=head('Commission · '+monLabel(U.mon),'',monSel+(pm.approve?(locked?'<span class="lock">✓ Approved &amp; locked</span>':`<button class="btn pri" data-act="comm-lock">Approve &amp; lock month</button>`):''))+
+  `<div class="card tbl"><table class="clist"><thead><tr><th>Recruiter</th><th class="n">Placements</th><th class="n">Qualified (6+ weeks)</th><th class="n">Weeks</th><th>Bands this month</th><th class="n">Month spread</th><th class="n">Commission</th><th></th></tr></thead><tbody>
+  ${data.map(x=>{const bs=[...new Set(x.band.filter((b,i)=>x.weekTot[i]>0))].sort();return `<tr class="click" data-act="cm-view" data-v="${esc(x.R)}"><td class="nm">${esc(x.R)}</td><td class="n">${x.lines.length}</td><td class="n">${x.lines.filter(l=>l.elig).length}</td><td class="n">${x.wks.length}</td><td>${bs.map(b=>pill('Band '+(b+1),'info')).join(' ')}</td><td class="n">${$m(x.spread)}</td><td class="n"><b class="gainm">${$m(x.comm)}</b></td><td><button class="btn sm pri" data-act="cm-view" data-v="${esc(x.R)}">View</button></td></tr>`}).join('')||'<tr><td colspan="8" class="empty">No recruiters with placements this month.</td></tr>'}
+  </tbody>${data.length?`<tfoot><tr><td>Total · ${data.length} recruiters</td><td class="n">${sum(data,x=>x.lines.length)}</td><td class="n">${sum(data,x=>x.lines.filter(l=>l.elig).length)}</td><td></td><td></td><td class="n">${$m(sum(data,x=>x.spread))}</td><td class="n">${$m(sum(data,x=>x.comm))}</td><td></td></tr></tfoot>`:''}</table></div>
+  <div class="row" style="justify-content:space-between">${pm.approve&&!locked?`<label class="fld" style="flex-direction:row;align-items:center;gap:8px"><span>Rate means</span><select class="in" style="width:auto" data-f="unit"><option value="mult" ${S.unit==='mult'?'selected':''}>Multiplier (as in workbook)</option><option value="pct" ${S.unit==='pct'?'selected':''}>Percent of spread</option></select></label>`:`<span class="sm-t">Rate unit: ${unit}</span>`}<span class="sm-t">Click a recruiter to see every placement, week, band and rate.</span></div>`;
+  return out;
+};
+
+const ALLCL=()=>D.clients.concat(S.xc||[]);
+V.clients=()=>{
+  const pm=PM(),ed=pm.editClients,q=(U.clQ||'').toLowerCase();
+  const cnt={};S.cands.forEach(c=>{const k=c.client;cnt[k]=cnt[k]||{a:0,t:0};cnt[k].t++;if(isActive(c))cnt[k].a++});
+  const cl=ALLCL().map(c=>client(c.name)).filter(c=>!q||c.name.toLowerCase().includes(q)).sort((a,b)=>((cnt[b.name]||{t:0}).t>0)-((cnt[a.name]||{t:0}).t>0)||a.name.localeCompare(b.name));
+  let out=head('Clients','',`<label class="fld" style="min-width:220px"><span>Find a client</span><input class="in" id="clq" data-f="clq" placeholder="Client name" value="${esc(U.clQ||'')}"></label>${ed?'<button class="btn pri" data-act="cl-new">+ Add client</button>':''}`)+
+  `<div class="card tbl"><table class="clist"><thead><tr><th>Client</th><th class="n">MSP fee</th><th class="n">Pays in</th><th class="n">OT bill ×</th><th class="n">DT bill ×</th><th class="n">Sales comm.</th><th class="n">Candidates</th><th></th></tr></thead><tbody>
+  ${cl.map(c=>{const k=cnt[c.name];return `<tr class="${ed?'click':''}" ${ed?`data-act="cl-edit" data-n="${esc(c.name)}"`:''}><td class="nm">${esc(c.name)}${(S.xc||[]).some(x=>x.name===c.name)?' '+pill('New','info'):''}</td><td class="n">${pc2(c.msp)}</td><td class="n">${c.terms} days</td><td class="n">${c.otx}</td><td class="n">${c.dtx}</td><td class="n">${c.scomm||0}%</td><td class="n">${k?`${k.t}<div class="sm-t">${k.a} working</div>`:'<span class="mut">none</span>'}</td><td>${ed?`<button class="btn sm" data-act="cl-edit" data-n="${esc(c.name)}">Edit</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">No clients match.</td></tr>'}
+  </tbody></table></div><div class="sm-t">${ALLCL().length} clients · ${Object.keys(cnt).length} with candidates placed. Changes recalculate every screen right away.</div>`;
+  if(U.clEd&&ed){
+    const isNew=U.clEd==='new',c=U.clDraft||(isNew?{name:'',msp:0,terms:30,otx:1.5,dtx:2,scomm:0}:client(U.clEd)),e=U.clErr||{};
+    const er=k=>e[k]?`<span class="err">${e[k]}</span>`:'';
+    const f=(k,lab,v,x='')=>`<label class="fld"><span>${lab}</span><input class="in" id="clf-${k}" value="${esc(v??'')}" ${x}>${er(k)}</label>`;
+    const k=cnt[c.name],canDel=!isNew&&(S.xc||[]).some(x=>x.name===c.name)&&!k;
+    out+=`<div class="dr-bg" data-act="cl-close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-t">
+    <div class="dr-h"><div><div class="sm-t">Clients</div><h2 id="dr-t">${isNew?'Add client':'Edit · '+esc(c.name)}</h2></div><button class="btn sm" data-act="cl-close" aria-label="Close">✕ Close</button></div>
+    <form id="clf" class="dr-b" novalidate>
+     <div class="sm-t">Fields marked <b class="req">*</b> are required.</div>
+     <section class="card csec"><h3>Client</h3><div class="formgrid">${f('name','Client name'+RQ_,c.name,isNew?'autocomplete="off"':'readonly')}</div>${isNew?'':'<div class="sm-t" style="margin-top:6px">The name can\'t change because candidates and invoices are filed under it.</div>'}</section>
+     <section class="card csec"><h3>Billing terms</h3><div class="formgrid">
+      ${f('msp','MSP fee %'+RQ_,+(c.msp*100).toFixed(4),'inputmode="decimal"')}
+      ${f('terms','Pays in (days after week ends)'+RQ_,c.terms,'inputmode="numeric"')}
+      ${f('otx','OT bill multiplier',c.otx,'inputmode="decimal"')}
+      ${f('dtx','DT bill multiplier',c.dtx,'inputmode="decimal"')}
+      ${f('scomm','Sales commission % of profit',c.scomm||0,'inputmode="decimal"')}</div>
+      <div class="sm-t" style="margin-top:8px">Example: a $100.00 bill rate becomes ${$m(100*(1-(+c.msp||0)))} after the MSP fee; invoices are due ${c.terms||0} days after the week ends.</div></section>
+     ${!isNew&&k?`<div class="note">${k.t} candidate${k.t>1?'s are':' is'} placed here (${k.a} working). Changing these terms recalculates their billing, profit and commission.</div>`:''}
+     <div class="row"><button class="btn pri" type="submit">${isNew?'Add client':'Save changes'}</button><button class="btn" type="button" data-act="cl-close">Cancel</button>${canDel?`<button class="btn" type="button" data-act="cl-del" style="margin-left:auto;color:var(--bad)">${U.clDelC?'Click again to delete':'Delete client'}</button>`:''}${Object.keys(e).length?'<span class="err">Fix the fields marked in red.</span>':''}</div>
+    </form></aside>`;
+  }
+  return out;
+};
+const RQ_='<b class="req" aria-label="required"> *</b>';
+function saveClient(){
+  const g=k=>document.getElementById('clf-'+k),v=k=>g(k)?g(k).value.trim():'',isNew=U.clEd==='new',e={},num=(k,req)=>{const r=v(k);if(r===''){if(req)e[k]='Required';return 0}const n=parseFloat(r);if(!(n>=0))e[k]='Enter a number, 0 or more';return n};
+  const o={name:isNew?v('name').replace(/\s+/g,' '):U.clEd,msp:num('msp',1)/100,terms:Math.round(num('terms',1)),otx:num('otx')||1,dtx:num('dtx')||1,scomm:num('scomm')};
+  if(!o.name)e.name='Enter the client name';else if(isNew&&ALLCL().some(c=>c.name.toLowerCase()===o.name.toLowerCase()))e.name='This client already exists';
+  if(!e.msp&&o.msp>=1)e.msp='Must be under 100%';
+  if(!e.scomm&&o.scomm>=100)e.scomm='Must be under 100%';
+  if(Object.keys(e).length){U.clErr=e;U.clDraft=Object.assign({},o,{msp:o.msp});render();return}
+  S.xc=S.xc||[];
+  if(isNew)S.xc.push(Object.assign(o,{pOTx:1.5,pDTx:2}));
+  else{const x=S.xc.find(y=>y.name===o.name);if(x)Object.assign(x,o);else S.clients[o.name]={msp:o.msp,terms:o.terms,otx:o.otx,dtx:o.dtx,scomm:o.scomm}}
+  save();U.clEd=null;U.clErr=null;U.clDraft=null;render();
+}
+V.settings=()=>{
+  const pm=PM(),ed=pm.editClients;
+  const g=(arr,tiers,lab)=>`<div class="tbl"><table><thead><tr><th>Weekly spread</th>${tiers.map((t,i)=>`<th class="n">${lab}${t}${i<5?'–'+(tiers[i+1]-0.01):'+'}</th>`).join('')}</tr></thead><tbody>${arr.map((r,i)=>`<tr><td>Band ${i+1} · from ${$m(D.grid.spread[i],0)}</td>${r.map(v=>`<td class="n">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return head('Settings','')+
+  `<div class="cgrid"><section class="card pad"><h2 style="font-size:16px;margin-bottom:6px">Employer cost on top of pay</h2>
+  <div class="kv"><span>W2 employees</span><b>${ed?`<input class="in h" data-f="load" data-k="W2" value="${S.load.W2}" aria-label="W2 load %">`:S.load.W2}%</b></div><div class="kv"><span>CTOC (Corp-to-Corp)</span><b>${ed?`<input class="in h" data-f="load" data-k="CTOC" value="${S.load.CTOC}" aria-label="CTOC load %">`:S.load.CTOC}%</b></div></section>
+  <section class="card pad"><h2 style="font-size:16px;margin-bottom:6px">Weeks &amp; pay</h2><div class="kv"><span>Week ends on</span><b>Sunday</b></div><div class="kv"><span>W2 payroll</span><b>Bi-weekly, Friday</b></div><div class="kv"><span>Pay calendar</span><b>${Object.keys(D.cal).length} weeks loaded</b></div><div class="kv"><span>Commission run date</span><b>${fd(D.runDate)}</b></div></section>
+  <section class="card pad"><h2 style="font-size:16px;margin-bottom:6px">Discounts (not applied yet)</h2><div class="kv"><span>Tenure 6 / 12 / 18 months</span><b>1% · 2% · 5%</b></div><div class="kv"><span>Volume $500k / $1M / $5M</span><b>1% · 2% · 5%</b></div></section></div>
+  ${ed?'<div class="note">Changes recalculate every screen right away. In the real system each change would ask “from which date?” and be logged.</div>':''}
+  <section class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2 style="font-size:17px">Commission grid · by profit per hour (used)</h2>${g(D.grid.gp,D.grid.gpTiers,'$')}<h2 style="font-size:17px">Commission grid · by gross margin % (in workbook, not used)</h2>${g(D.grid.gpm,D.grid.gpmTiers,'')}</section>`;
+};
+
+V.reports=()=>{
+  const pm=PM();
+  const tabs=[['state','Revenue by state'],['wc','Payroll by state (workers\' comp)']].concat(pm.margin?[['client','Profit by client'],['checks','Data checks']]:[]);
+  if(!tabs.find(t=>t[0]===U.rep))U.rep=tabs[0][0];
+  let body='';
+  if(U.rep==='state'&&pm.bill){
+    const m={},qs=new Set();L.forEach(l=>{const a=ar(l);if(!a)return;const s=l.c.state||'(blank)',q=l.t.rcvd&&l.t.rcvd.date?qtr(l.t.rcvd.date):'Not received';qs.add(q);m[s]=m[s]||{};m[s][q]=(m[s][q]||0)+a.bill});
+    const cols=['Not received',...[...qs].filter(q=>q!=='Not received').sort()];const st=Object.keys(m).sort();
+    body=`<table><thead><tr><th>State</th>${cols.map(c=>`<th class="n">${c}</th>`).join('')}<th class="n">Total</th></tr></thead><tbody>${st.map(s=>`<tr><td class="nm">${esc(s)}</td>${cols.map(c=>`<td class="n">${m[s][c]?$m(m[s][c],0):'—'}</td>`).join('')}<td class="n nm">${$m(sum(cols,c=>m[s][c]),0)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Total</td>${cols.map(c=>`<td class="n">${$m(sum(st,s=>m[s][c]),0)}</td>`).join('')}<td class="n">${$m(sum(st,s=>sum(cols,c=>m[s][c])),0)}</td></tr></tfoot></table>`;
+  }else if(U.rep==='state'){body='<div class="empty">Billing figures are hidden for your role.</div>'}
+  if(U.rep==='wc'){const m={};L.forEach(l=>{const k=(l.c.state||'(blank)')+'|'+(l.c.wc||'—');m[k]=m[k]||{p:new Set(),w2:0,ct:0};m[k].p.add(l.name);m[k][l.c.pt==='W2'?'w2':'ct']+=l.r.pay});const ks=Object.keys(m).sort();
+    body=`<table><thead><tr><th>State</th><th>WC code</th><th class="n">People</th><th class="n">W2 payroll</th><th class="n">CTOC</th><th class="n">Total</th></tr></thead><tbody>${ks.map(k=>{const [s,w]=k.split('|');return `<tr><td class="nm">${esc(s)}</td><td>${esc(w)}</td><td class="n">${m[k].p.size}</td><td class="n">${$m(m[k].w2,0)}</td><td class="n">${$m(m[k].ct,0)}</td><td class="n nm">${$m(m[k].w2+m[k].ct,0)}</td></tr>`}).join('')}</tbody><tfoot><tr><td>Total</td><td></td><td></td><td class="n">${$m(sum(ks,k=>m[k].w2),0)}</td><td class="n">${$m(sum(ks,k=>m[k].ct),0)}</td><td class="n">${$m(sum(ks,k=>m[k].w2+m[k].ct),0)}</td></tr></tfoot></table>`}
+  if(U.rep==='client'){const m={};L.forEach(l=>{const k=l.c.client;m[k]=m[k]||{p:new Set(),h:0,b:0,bst:0,pay:0,gp:0,adj:0};const x=m[k];x.p.add(l.name);x.h+=l.r.hours;x.b+=l.r.bill;x.bst+=l.r.billST;x.pay+=l.r.pay;x.gp+=l.r.gp;x.adj+=l.r.adj});const ks=Object.keys(m).sort((a,b)=>m[b].adj-m[a].adj);
+    body=`<table><thead><tr><th>Client</th><th class="n">People</th><th class="n">Hours</th><th class="n">Billed</th><th class="n">Pay</th><th class="n">Adj. GP</th><th class="n">GPM</th></tr></thead><tbody>${ks.map(k=>{const x=m[k];return `<tr><td class="nm">${esc(k)}</td><td class="n">${x.p.size}</td><td class="n">${$n(x.h,1)}</td><td class="n">${$m(x.b,0)}</td><td class="n">${$m(x.pay,0)}</td><td class="n nm">${$m(x.adj,0)}</td><td class="n">${pct(x.gp/x.bst*100)}</td></tr>`}).join('')}</tbody><tfoot><tr><td>Total</td><td></td><td class="n">${$n(sum(ks,k=>m[k].h),1)}</td><td class="n">${$m(sum(ks,k=>m[k].b),0)}</td><td class="n">${$m(sum(ks,k=>m[k].pay),0)}</td><td class="n">${$m(sum(ks,k=>m[k].adj),0)}</td><td></td></tr></tfoot></table>`}
+  if(U.rep==='checks'){const stip=sum(L,l=>l.r.stipAmt),otB=sum(L,l=>l.r.bill-l.r.billST),otP=sum(L,l=>(l.r.pay-l.r.payST-l.r.stipAmt)*(1+l.r.L));
+    const gone=S.cands.filter(c=>[c.sl,c.dl,c.rec].includes('Gone')).length,nost=S.cands.filter(c=>!c.state).length;
+    const items=[['Stipends left out of gross profit',$m(stip,0),'GP subtracts regular pay only, so profit on stipend contractors looks higher than it is.'],
+      ['Overtime, holiday and on-call left out of gross profit',`${$m(otB,0)} billed · ${$m(otP,0)} loaded cost`,'GP uses regular hours only.'],
+      ['Placements with an owner marked “Gone”',gone,'Owners should be real users so access and commission follow them.'],
+      ['Contractors with no work state',nost,'Their payroll lands under a blank state in the workers\' comp report.'],
+      ['Timesheet # and invoice # filled in','0 of '+L.length,'The workbook has no invoice entity yet.'],
+      ['Commission rate unit','Unconfirmed','Multiplier or percent? See the Commission screen.']];
+    body=`<table><thead><tr><th>Check</th><th>Result</th><th>Why it matters</th></tr></thead><tbody>${items.map(i=>`<tr><td class="nm">${i[0]}</td><td class="num">${i[1]}</td><td class="sm-t">${i[2]}</td></tr>`).join('')}</tbody></table>`}
+  return head('Reports','Totals regroup the same weekly rows. Nobody types into a report.')+
+   `<div class="chips">${tabs.map(([k,l])=>`<button class="chip ${U.rep===k?'on':''}" data-act="rep" data-v="${k}">${l}</button>`).join('')}</div><section class="card tbl">${body}</section>`;
+};
+
+V.users=()=>{
+  const yes='<span class="pill good">Yes</span>',no='<span class="pill">No</span>';
+  return head('Users & roles','Who can sign in, which placements each person sees, and which numbers are shown. Use “Viewing as” at the top to try any role.')+
+  `<section class="card tbl"><table><thead><tr><th>User</th><th>Sees which placements</th><th>Menu</th><th>Bill rates</th><th>Pay rates</th><th>Margin</th><th>Can change</th><th></th></tr></thead><tbody>
+  ${ROLES.map(r=>{const p=PERMS[r.kind];const can=[p.editCands&&'candidates',p.editHours&&'hours',p.editPay&&'payments',p.editClients&&'clients',p.approve&&'approve commission'].filter(Boolean).join(', ')||'nothing';
+   return `<tr class="${r.id===S.role?'sel':''}"><td class="nm">${esc(r.label)}</td><td>${p.scope}</td><td class="sm-t">${p.nav.map(n=>NAVLBL[n]).join(', ')}</td><td>${p.bill?yes:no}</td><td>${p.pay?yes:no}</td><td>${p.margin?yes:no}</td><td class="sm-t">${can}</td><td><button class="btn sm" data-act="as" data-v="${r.id}">View as</button></td></tr>`}).join('')}
+  </tbody></table></section>
+  <div class="note">Access follows the names on each placement (DM, Sales Director, Sales Lead, Delivery Lead, Recruiter). When someone leaves, an admin reassigns their placements instead of typing “Gone”.</div>`;
+};
+
+/* ---------- render + events ---------- */
+function render(){
+  reC();
+  const pm=PM(),r=role();
+  let route=(location.hash||'#home').slice(1);if(!V[route]||!pm.nav.includes(route))route='home';
+  L=allLines().filter(l=>inScope(l.c));
+  const miss=pm.nav.includes('timesheets')?activeIn(LAST_WK).filter(c=>!hasHours(c.name,LAST_WK)).length:0;
+  document.getElementById('nav').innerHTML=pm.nav.map(n=>`<a href="#${n}" class="${n===route?'on':''}" ${n===route?'aria-current="page"':''}><span>${NAVLBL[n]}</span>${n==='timesheets'&&miss?`<span class="cnt">${miss}</span>`:''}</a>`).join('');
+  document.getElementById('role').innerHTML=ROLES.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${esc(x.label)}</option>`).join('');
+  document.getElementById('scope').textContent=pm.scope;
+  document.getElementById('view').innerHTML=V[route]();
+  document.documentElement.classList.toggle('noscroll',!!document.querySelector('.drawer'));
+  const rb=document.querySelector('[data-act="reset"]');rb.textContent=U.confirmReset?'Click again to reset':'Reset demo data';
+}
+const ACT={
+  'ts-sel':d=>{U.tsSel=d.k;render()},
+  'ts-f':d=>{U.tsF=d.v;render()},
+  'ts-wk':d=>{const i=WEEKS.indexOf(U.wk)+(+d.d);if(WEEKS[i]){U.wk=WEEKS[i];U.tsSel=null;render()}},
+  'ts-approve':d=>{const t=S.ts[d.k];if(tsReady(t)){t.status='approved';save();render()}},
+  'ts-reopen':d=>{const t=S.ts[d.k];if(t){t.status='draft';save();render()}},
+  'ts-approve-all':()=>{activeIn(U.wk).forEach(c=>{const t=S.ts[c.name+'|'+U.wk];if(t&&t.status==='draft'&&tsReady(t))t.status='approved'});save();render()},
+  'ts-copy':()=>{const pw=addD(U.wk,-7);activeIn(U.wk).forEach(c=>{if(hasHours(c.name,U.wk))return;const p=S.ts[c.name+'|'+pw];if(p&&p.h.some(x=>x>0))S.ts[c.name+'|'+U.wk]={h:p.h.slice(),exp:0,rcvd:null,status:'draft'}});save();render()},
+  'pl-f':d=>{U.plF=d.v;render()},'pl-t':d=>{U.plT=d.v;render()},
+  'pl-sel':d=>{U.plSel=d.n;U.delConfirm=false;render()},
+  'pl-mode':d=>{U.plMode=d.v;render()},
+  'pl-new':()=>{U.plEdit='new';U.plErr=null;U.plDraft=null;render();window.scrollTo(0,0)},
+  'pl-edit':d=>{U.plEdit=d.n;U.plErr=null;U.plDraft=null;render();window.scrollTo(0,0)},
+  'pl-cancel':()=>{U.plEdit=null;U.plErr=null;U.plDraft=null;render()},
+  'pl-open':d=>{U.plSel=d.n;U.plMode='list';U.plQ='';U.plF='all';U.plT='all';render()},
+  'pl-del':()=>{if(!U.delConfirm){U.delConfirm=true;render();return}S.cands=S.cands.filter(c=>c.name!==U.plSel);U.plSel=null;U.delConfirm=false;save();reC();render()},
+  'ar-f':d=>{U.arF=d.v;U.arSel=null;render()},
+  'inv-home':()=>{U.invDr=false;U.invC=null;U.invN=null;U.arSel=null;render();window.scrollTo(0,0)},'inv-c':d=>{U.invDr=false;U.invC=d.v;U.invN=null;U.arSel=null;render();window.scrollTo(0,0)},'inv-wk':d=>{U.invW=d.v;render()},'inv-view':d=>{U.invW=d.v;U.invDr=true;U.arSel=null;render();const b=document.querySelector('.drawer .btn');if(b)b.focus()},'inv-close':()=>{U.invDr=false;render()},'inv-w':d=>{const c=C[U.invN],wk=L.filter(l=>l.name===c.name&&ar(l)).map(l=>l.wk).sort().reverse(),i=wk.indexOf(U.invW)+(+d.d);if(wk[i]){U.invW=wk[i];render()}},
+  'inv-n':d=>{U.invN=d.v;U.invW=null;U.invDr=false;U.arSel=null;render();window.scrollTo(0,0)},'ar-sel':d=>{U.arSel=d.k;U.invDr=false;render()},'ar-close':()=>{U.arSel=null;render()},
+  'pay-clear':()=>{const t=S.ts[U.arSel];if(t){t.rcvd=null;save();render()}},
+  'fte-view':d=>{U.fteSel=d.n;U.fteDr=true;render();const b=document.querySelector('.drawer .btn');if(b)b.focus()},'fte-close':()=>{U.fteDr=false;render()},'fte-step':d=>{const fs=D.fte.filter(fteScope).filter(f=>!U.fteQ||(f.name+' '+f.client+' '+f.rec).toLowerCase().includes(U.fteQ.toLowerCase())),i=fs.findIndex(f=>f.name===U.fteSel)+(+d.d);if(fs[i]){U.fteSel=fs[i].name;render()}},
+  'fte-pay':d=>{const f=D.fte.find(x=>x.name===d.n);S.fte[d.n]={date:ASOF,amt:f.amount};save();render()},
+  'pay-tab-old':d=>{if(d.v==='run')U.payTab='run';else{U.payTab='period';U.pyMode=d.v}U.pyDr=false;render()},'py-mode':d=>{U.pyMode=d.v;U.pyDr=false;render()},'py-basis':d=>{U.pyBasis=d.v;render()},'py-t':d=>{U.pyT=d.v;render()},'py-rows':d=>{U.pyRows=d.v;render()},
+  'py-wk':d=>{const i=WEEKS.indexOf(U.pyWk)+(+d.d);if(WEEKS[i]){U.pyWk=WEEKS[i];render()}},
+  'py-view':d=>{U.pySel=d.n;U.pyDr=true;render();const b=document.querySelector('.drawer .btn');if(b)b.focus()},'py-close':()=>{U.pyDr=false;render()},
+  'py-step':d=>{const ns=[...new Set([...document.querySelectorAll('[data-act="py-view"]')].map(t=>t.dataset.n))],i=ns.indexOf(U.pySel)+(+d.d);if(ns[i]){U.pySel=ns[i];render()}},
+  'py-open':d=>{U.payDate=d.v;location.hash='#payroll'},
+  'pay-close':()=>{S.locks['pay|'+U.payDate]={at:ASOF,by:role().label};save();render()},
+  'rec-sel':d=>{U.recSel=d.v;render()},
+  'cl-new':()=>{U.clEd='new';U.clErr=null;U.clDraft=null;U.clDelC=false;render();const i=document.getElementById('clf-name');if(i)i.focus()},'cl-edit':d=>{U.clEd=d.n;U.clErr=null;U.clDraft=null;U.clDelC=false;render()},'cl-close':()=>{U.clEd=null;U.clErr=null;U.clDraft=null;render()},
+  'cl-del':()=>{if(!U.clDelC){U.clDelC=true;render();return}S.xc=S.xc.filter(x=>x.name!==U.clEd);delete S.clients[U.clEd];save();U.clEd=null;U.clDelC=false;render()},
+  'cm-view':d=>{U.cmSel=d.v;U.cmDr=true;U.cmF='all';render();window.scrollTo(0,0)},'cm-close':()=>{U.cmDr=false;render();window.scrollTo(0,0)},'cm-f':d=>{U.cmF=d.v;render()},
+  'cm-step':d=>{const r=role();let dt=commission(U.mon);if(['rec','lead'].includes(r.kind))dt=dt.filter(x=>x.R===r.p);const ns=dt.map(x=>x.R),i=ns.indexOf(U.cmSel)+(+d.d);if(ns[i]){U.cmSel=ns[i];U.cmF='all';render()}},
+  'comm-lock':()=>{S.locks['comm|'+U.mon]=true;save();render()},
+  'rep':d=>{U.rep=d.v;render()},
+  'as':d=>{S.role=d.v;save();render();window.scrollTo(0,0)},
+  'reset':()=>{if(!U.confirmReset){U.confirmReset=true;render();setTimeout(()=>{U.confirmReset=false;render()},4000);return}const r=S.role;S=fresh();S.role=r;reC();seedHistory();U.confirmReset=false;save();render()}
+};
+if(typeof document!=='undefined'){
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(f){e.preventDefault();f(b.dataset,b)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(U.invDr||U.fteDr||U.pyDr||U.cmDr||U.clEd)){U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();return}if((e.key==='Enter'||e.key===' ')&&e.target.matches('.li[data-act]')){e.preventDefault();ACT[e.target.dataset.act](e.target.dataset)}});
+document.addEventListener('submit',e=>{if(e.target.id==='candf'){e.preventDefault();saveCand();return}if(e.target.id==='clf'){e.preventDefault();saveClient();return}if(e.target.id!=='payf')return;e.preventDefault();const t=S.ts[U.arSel];if(!t)return;const amt=parseFloat(document.getElementById('pay-amt').value);if(!(amt>=0))return;t.rcvd={date:document.getElementById('pay-date').value||ASOF,amt,note:document.getElementById('pay-note').value};save();U.arSel=null;render()});
+document.addEventListener('input',e=>{const el=e.target,f=el.dataset.f;
+  if(f==='clq'){U.clQ=el.value;render();const q=document.getElementById('clq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  if(f==='tsq'){U.tsQ=el.value;U.tsSel=null;render();const q=document.getElementById('tsq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  if(f==='pyq'){U.pyQ=el.value;render();const q=document.getElementById('pyq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  if(f==='fteq'){U.fteQ=el.value;render();const q=document.getElementById('fteq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  if(f==='invq'){U.invQ=el.value;render();const q=document.getElementById('invq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  if(f==='tsx'){const k=el.dataset.k;let t=S.ts[k];if(!t)t=S.ts[k]={h:[0,0,0,0,0,0,0],exp:0,rcvd:null,status:'draft'};const p=el.dataset.p;if(p!=='invn'&&t.status==='approved')return;t[p]=p==='exp'?Math.max(0,parseFloat(el.value)||0):el.value;save();
+    if(p==='tsn')el.classList.toggle('need',!el.value.trim());const tr=el.closest('tr'),b=tr&&tr.querySelector('[data-act="ts-approve"]');if(b)b.disabled=!tsReady(t);if(p==='exp'){const rows=activeIn(U.wk).map(c=>({c,k:c.name+'|'+U.wk})),q=document.getElementById('t-e');if(q)q.textContent=$m(totals(rows).e)}
+    U.tsSel=k;const x=document.getElementById('ts-x');if(x)x.innerHTML=explain()}
+  if(f==='h'){const k=el.dataset.k;let t=S.ts[k];if(!t)t=S.ts[k]={h:[0,0,0,0,0,0,0],exp:0,rcvd:null,status:'draft'};if(t.status==='approved')return;t.h[+el.dataset.i]=Math.max(0,parseFloat(el.value)||0);save();
+    const i=k.indexOf('|'),c=C[k.slice(0,i)],r=calc(c,t),tr=el.closest('tr'),set=(s,v)=>{const x=tr.querySelector(`[data-c="${s}"]`);if(x)x.innerHTML=v};
+    set('bill',$m(r.bill));set('pay',$m(r.pay));set('sp',$m(r.spread));set('st',stPill(t.h.some(x=>x>0)?'Draft':'Missing'));{const b=tr.querySelector('[data-act="ts-approve"]');if(b)b.disabled=!tsReady(t);if(el.dataset.i==='0')el.classList.toggle('need',!(t.h[0]>0))}
+    const rows=activeIn(U.wk).map(c=>({c,k:c.name+'|'+U.wk})),tt=totals(rows),q=id=>document.getElementById(id);
+    if(q('t-h'))q('t-h').textContent=$n(tt.h)+' hours';if(q('t-b'))q('t-b').textContent=$m(tt.b);if(q('t-p'))q('t-p').textContent=$m(tt.p);if(q('t-s'))q('t-s').textContent=$m(tt.s);
+    U.tsSel=k;const x=q('ts-x');if(x)x.innerHTML=explain();document.querySelectorAll('tr.sel').forEach(r=>r.classList.remove('sel'));tr.classList.add('sel')}
+  if(f==='plq'){U.plQ=el.value;const t=document.getElementById('pl-table');if(t){t.innerHTML=plTable()}else{document.getElementById('pl-list').innerHTML=plList();document.getElementById('pl-d').innerHTML=plDetail()}}
+});
+document.addEventListener('change',e=>{const el=e.target,f=el.dataset.f;
+  if(el.id==='role'){S.role=el.value;save();U.recSel=null;render();return}
+  if(f==='wk'){U.wk=el.value;U.tsSel=null;render()}
+  if(f==='arc'){U.arC=el.value;render()}
+  if(f==='invw'){U.invW=el.value;render()}
+  if(f==='payd'){U.payDate=el.value.slice(2);render()}
+  if(f==='phm'){U.phMode=el.value;U.pyDr=false;render()}
+  if(f==='pywk'){U.pyWk=el.value;render()}
+  if(f==='pyfrom'){U.pyFrom=el.value;render()}
+  if(f==='pyto'){U.pyTo=el.value;render()}
+  if(f==='mon'){U.mon=el.value;render()}
+  if(f==='unit'){S.unit=el.value;save();render()}
+  if(f==='adp'){S.adp[U.payDate+'|'+el.dataset.n]=el.value===''?null:parseFloat(el.value);save();render()}
+  if(f==='chk'){const a=S.check[U.payDate]=S.check[U.payDate]||[];a[+el.dataset.i]=el.checked;save();render()}
+  if(f==='load'){const v=parseFloat(el.value);if(v>=0){S.load[el.dataset.k]=v;save()}render()}
+  if(f==='cl'){const v=parseFloat(el.value);if(v>=0){const n=el.dataset.n,k=el.dataset.k;S.clients[n]=Object.assign({},S.clients[n]||{},{[k]:k==='msp'?v/100:v});save()}render()}
+  if(f==='h')render();
+});
+window.addEventListener('hashchange',()=>{U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();window.scrollTo(0,0)});
+seedHistory();save();render();
+}
+</script>
+
+</body>
+</html>
