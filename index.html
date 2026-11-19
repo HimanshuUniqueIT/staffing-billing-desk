@@ -152,6 +152,8 @@ svg .bar{fill:var(--bar)} svg .ln{fill:none;stroke:var(--accent);stroke-width:2.
 .lock{font-size:12.5px;color:var(--good);font-weight:600}
 .mut{color:var(--muted)}
 .err{color:var(--bad);font-size:12px;font-weight:600}
+.pgrp{display:flex;flex-direction:column;gap:2px;margin-top:12px}.pgrp>b{font-size:13px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0 12px}
 .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
 .fsec{display:flex;flex-direction:column;gap:10px}
 .fsec h3{font-size:15px}
@@ -315,11 +317,16 @@ const PERMS={
  exec:   {nav:ALLNAV,bill:1,pay:1,margin:1,scope:'Everything · view only'}};
 const KINDS=[['admin','Admin'],['finance','Finance team'],['payroll','Payroll team'],['dm','DM (Delivery Manager)'],['sd','Sales Director'],['lead','Lead (Sales / Delivery)'],['rec','Recruiter'],['exec','Executive (read-only)']];
 const KLBL=Object.fromEntries(KINDS);const SCOPED=['dm','sd','lead','rec'];
+const SEEK=[['bill','Bill rates'],['pay','Pay rates'],['margin','Margin & gross profit']];
+const EDK=[['editCands','Candidates'],['editHours','Hours'],['editPay','Payments'],['editClients','Clients'],['approve','Approve commission']];
+const PKEYS=[...SEEK,...EDK].map(x=>x[0]);
+function permOf(u){const b=PERMS[u.kind];if(!u.perm)return b;const o=Object.assign({},b,u.perm);o.nav=ALLNAV.filter(n=>n==='home'||(u.perm.nav||b.nav).includes(n));return o}
+function permDiff(kind,o){const b=PERMS[kind];const same=ALLNAV.every(n=>b.nav.includes(n)===o.nav.includes(n))&&PKEYS.every(k=>!!b[k]===!!o[k]);return same?null:o}
 function ensureUsers(){if(!S.users)S.users=BASE_ROLES.map(r=>({id:r.id,label:r.label,name:r.p||r.label,email:'',kind:r.kind,p:r.p||'',active:true,added:null,base:1}))}
 function uLabel(u){if(u.label)return u.label;const k=KLBL[u.kind].replace(/ \(.*\)/,'');return u.name+' · '+k}
-function roles(){ensureUsers();return S.users.filter(u=>u.active!==false).map(u=>({id:u.id,label:uLabel(u),kind:u.kind,p:SCOPED.includes(u.kind)?u.p:undefined}))}
+function roles(){ensureUsers();return S.users.filter(u=>u.active!==false).map(u=>({id:u.id,label:uLabel(u),kind:u.kind,p:SCOPED.includes(u.kind)?u.p:undefined,perm:permOf(u)}))}
 const role=()=>{const a=roles();return a.find(r=>r.id===S.role)||a[0]};
-const PM=()=>PERMS[role().kind];
+const PM=()=>role().perm||PERMS[role().kind];
 function inScope(c){const r=role();switch(r.kind){case 'dm':return c.dm===r.p;case 'sd':return c.sd===r.p;case 'lead':return [c.sl,c.dl,c.rec].includes(r.p);case 'rec':return c.rec===r.p||c.dl===r.p;default:return true}}
 const fteScope=f=>{const r=role();return ['lead','rec'].includes(r.kind)?String(f.rec).includes(r.p):true};
 
@@ -940,18 +947,18 @@ V.reports=()=>{
 V.users=()=>{
   const yes='<span class="pill good">Yes</span>',no='<span class="pill">No</span>',adm=role().kind==='admin';ensureUsers();
   const all=S.users,q=U.usQ.trim().toLowerCase(),act=all.filter(u=>u.active!==false).length;
-  const shown=all.filter(u=>(U.usF==='all'||(U.usF==='active'?u.active!==false:u.active===false))&&(!q||(u.name+' '+u.email+' '+KLBL[u.kind]+' '+(u.p||'')).toLowerCase().includes(q)));
-  let out=head('Users & roles','Add the people who sign in, pick their role, and link them to their name on placements. Use “Viewing as” at the top to try any user.',adm?'<button class="btn pri" data-act="us-new">+ Add user</button>':'<span class="pill">View only</span>')+
+  const shown=all.filter(u=>(U.usF==='all'||(U.usF==='active'?u.active!==false:u.active===false))&&(!q||(u.name+' '+KLBL[u.kind]+' '+(u.p||'')).toLowerCase().includes(q)));
+  let out=head('Users & roles','Add the people who sign in, pick their role, and tick what they can do. Use “Viewing as” at the top to try any user.',adm?'<button class="btn pri" data-act="us-new">+ Add user</button>':'<span class="pill">View only</span>')+
   `<section class="card"><div class="pad row" style="border-bottom:1px solid var(--line);align-items:flex-end">
-    <label class="fld" style="flex:1 1 240px;max-width:360px"><span>Find a user</span><input class="in" id="usq" data-f="usq" type="search" placeholder="Name, email or role" value="${esc(U.usQ)}"></label>
+    <label class="fld" style="flex:1 1 240px;max-width:360px"><span>Find a user</span><input class="in" id="usq" data-f="usq" type="search" placeholder="Username or role" value="${esc(U.usQ)}"></label>
     <div class="chips">${[['active','Active '+act],['inactive','Inactive '+(all.length-act)],['all','All '+all.length]].map(([k,l])=>`<button class="chip ${U.usF===k?'on':''}" data-act="us-f" data-v="${k}">${l}</button>`).join('')}</div></div>
-  <div class="tbl"><table><thead><tr><th>User</th><th>Role</th><th>Name on placements</th><th>Sees which placements</th><th>Status</th><th>Added</th><th></th></tr></thead><tbody>
-  ${shown.map(u=>{const on=u.active!==false,cur=on&&u.id===role().id;return `<tr class="${cur?'sel':''}${on?'':' ended'}"><td><div class="nm">${esc(u.name)}${cur?' <span class="pill">you</span>':''}</div><div class="sm-t">${u.email?esc(u.email):'<span class="mut">no email yet</span>'}</div></td>
-   <td>${esc(KLBL[u.kind])}</td><td>${SCOPED.includes(u.kind)?esc(u.p||'—'):'<span class="mut">—</span>'}</td><td class="sm-t">${PERMS[u.kind].scope}</td>
+  <div class="tbl"><table><thead><tr><th>Username</th><th>Role</th><th>Sees which placements</th><th>Access</th><th>Status</th><th>Added</th><th></th></tr></thead><tbody>
+  ${shown.map(u=>{const on=u.active!==false,cur=on&&u.id===role().id;return `<tr class="${cur?'sel':''}${on?'':' ended'}"><td><div class="nm">${esc(u.name)}${cur?' <span class="pill">you</span>':''}</div><div class="sm-t">${u.pw?'Password set':'<span class="mut">No password yet</span>'}</div></td>
+   <td>${esc(KLBL[u.kind])}</td><td class="sm-t">${PERMS[u.kind].scope}</td><td>${u.perm?'<span class="pill warn">Custom</span>':'<span class="sm-t">Role default</span>'}</td>
    <td>${on?'<span class="pill good">Active</span>':'<span class="pill">Inactive</span>'}</td><td class="sm-t">${u.added?fd(u.added):'Set up'}</td>
    <td style="white-space:nowrap">${on?`<button class="btn sm" data-act="as" data-v="${esc(u.id)}">View as</button> `:''}${adm?`<button class="btn sm" data-act="us-edit" data-v="${esc(u.id)}">Edit</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="7" class="empty">No users match.</td></tr>'}
   </tbody></table></div></section>
-  <h2 style="font-size:16px;margin:22px 0 8px">What each role can do</h2>
+  <h2 style="font-size:16px;margin:22px 0 8px">What each role can do by default</h2>
   <section class="card tbl"><table><thead><tr><th>Role</th><th>Users</th><th>Sees which placements</th><th>Menu</th><th>Bill rates</th><th>Pay rates</th><th>Margin</th><th>Can change</th></tr></thead><tbody>
   ${KINDS.map(([k,l])=>{const p=PERMS[k];const can=[p.editCands&&'candidates',p.editHours&&'hours',p.editPay&&'payments',p.editClients&&'clients',p.approve&&'approve commission',k==='admin'&&'users'].filter(Boolean).join(', ')||'nothing';const n=all.filter(u=>u.kind===k&&u.active!==false).length;
    return `<tr><td class="nm">${esc(l)}</td><td class="n">${n}</td><td>${p.scope}</td><td class="sm-t">${p.nav.map(n=>NAVLBL[n]).join(', ')}</td><td>${p.bill?yes:no}</td><td>${p.pay?yes:no}</td><td>${p.margin?yes:no}</td><td class="sm-t">${can}</td></tr>`}).join('')}
@@ -968,30 +975,40 @@ function usDrawer(){
   <div class="dr-h"><div><div class="sm-t">Users & roles</div><h2 id="dr-t">${isNew?'Add user':'Edit · '+esc(u.name)}</h2></div><button class="btn sm" data-act="us-close" aria-label="Close">✕ Close</button></div>
   <form id="usf" class="dr-b" novalidate>
    <div class="sm-t">Fields marked <b class="req">*</b> are required.</div>
-   <section class="card csec"><h3>Person</h3><div class="formgrid">
-    <label class="fld"><span>Full name${RQ_}</span><input class="in" id="usf-name" value="${esc(u.name)}" autocomplete="off">${er('name')}</label>
-    <label class="fld"><span>Work email${RQ_}</span><input class="in" id="usf-email" type="email" value="${esc(u.email||'')}" placeholder="name@company.com" autocomplete="off">${er('email')}</label></div></section>
-   <section class="card csec"><h3>Access</h3><div class="formgrid">
-    <label class="fld"><span>Role${RQ_}</span><select class="in" id="usf-kind" data-f="uskind" ${self?'disabled':''}>${KINDS.map(([k,l])=>`<option value="${k}" ${k===u.kind?'selected':''}>${l}</option>`).join('')}</select>${self?'<span class="sm-t">You can\'t change your own role.</span>':''}</label>
-    ${sc?`<label class="fld"><span>Name on placements${RQ_}</span><input class="in" id="usf-p" list="usf-pl" value="${esc(u.p||'')}" placeholder="Pick or type a name"><datalist id="usf-pl">${plNames().map(n=>`<option value="${esc(n)}">`).join('')}</datalist>${er('p')}</label>`:''}</div>
-    <div class="sm-t" style="margin-top:8px"><b>Sees:</b> ${PERMS[u.kind].scope}. <b>Menu:</b> ${PERMS[u.kind].nav.map(n=>NAVLBL[n]).join(', ')}.${sc?' They only see placements where this name is filled in as '+(u.kind==='dm'?'the DM':u.kind==='sd'?'the Sales Director':u.kind==='lead'?'Sales Lead, Delivery Lead or Recruiter':'the Recruiter or Delivery Lead')+'.':''}</div></section>
+   <section class="card csec"><h3>Login</h3><div class="formgrid">
+    <label class="fld"><span>Username${RQ_}</span><input class="in" id="usf-name" list="usf-pl" value="${esc(u.name)}" placeholder="e.g. Monu" autocomplete="off"><datalist id="usf-pl">${plNames().map(n=>`<option value="${esc(n)}">`).join('')}</datalist>${er('name')}</label>
+    <label class="fld"><span>Password${isNew?RQ_:''}</span><input class="in" id="usf-pw" type="password" value="${esc(U.usDraft&&U.usDraft.pw||'')}" placeholder="${isNew?'At least 6 characters':'Leave blank to keep current'}" autocomplete="new-password">${er('pw')}</label>
+    <label class="fld"><span>Role${RQ_}</span><select class="in" id="usf-kind" data-f="uskind" ${self?'disabled':''}>${KINDS.map(([k,l])=>`<option value="${k}" ${k===u.kind?'selected':''}>${l}</option>`).join('')}</select>${self?'<span class="sm-t">You can\'t change your own role.</span>':''}</label></div>
+    <div class="sm-t" style="margin-top:8px"><b>Sees:</b> ${PERMS[u.kind].scope}.${sc?' Uses the username to find their placements, so type it exactly as it appears as '+(u.kind==='dm'?'the DM':u.kind==='sd'?'the Sales Director':u.kind==='lead'?'Sales Lead, Delivery Lead or Recruiter':'the Recruiter or Delivery Lead')+'.':''}</div></section>
+   <section class="card csec"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="flex:1">What they can do</h3>${u.perm?`<span class="pill warn">Custom</span> <button class="btn sm" type="button" data-act="us-reset" ${self?'disabled':''}>Reset to ${esc(KLBL[u.kind])} default</button>`:`<span class="sm-t">${esc(KLBL[u.kind])} default</span>`}</div>
+    <div class="sm-t" style="margin:6px 0 2px">Boxes are ticked for the role you pick. Untick or tick any box to change this person's access.${self?' You can\'t change your own access.':''}</div>
+    ${(()=>{const pm=u.perm?Object.assign({},PERMS[u.kind],u.perm):PERMS[u.kind],dis=self?'disabled':'';
+      const box=(id,on,lab,x='')=>`<label class="chk"><input type="checkbox" id="${id}" data-f="usperm" ${on?'checked':''} ${dis} ${x}>${lab}</label>`;
+      return `<div class="pgrp"><b>Pages in the menu</b><div class="pgrid">${ALLNAV.map(n=>box('usf-nav-'+n,n==='home'||pm.nav.includes(n),NAVLBL[n]+(n==='home'?' <span class="mut">(always)</span>':''),n==='home'?'disabled':'')).join('')}</div></div>
+      <div class="pgrp"><b>Can see</b><div class="pgrid">${SEEK.map(([k,l])=>box('usf-pm-'+k,pm[k],l,k==='margin'&&!(pm.bill&&pm.pay)?'disabled':'')).join('')}</div>${!(pm.bill&&pm.pay)?'<div class="sm-t">Margin needs both bill and pay rates.</div>':''}</div>
+      <div class="pgrp"><b>Can change</b><div class="pgrid">${EDK.map(([k,l])=>box('usf-pm-'+k,pm[k],l)).join('')}</div>${u.kind==='admin'?'<div class="sm-t">Admins can always add and edit users.</div>':''}</div>`})()}
+   </section>
    ${isNew?'':`<section class="card csec"><h3>Status</h3><label class="row" style="gap:8px"><input type="checkbox" id="usf-active" ${u.active!==false?'checked':''} ${self?'disabled':''}> <span>Active — can sign in</span></label>${self?'<div class="sm-t">You can\'t deactivate the user you are viewing as.</div>':''}${er('active')}</section>`}
    <div class="row"><button class="btn pri" type="submit">${isNew?'Add user':'Save changes'}</button><button class="btn" type="button" data-act="us-close">Cancel</button>${Object.keys(e).length?'<span class="err">Fix the fields marked in red.</span>':''}</div>
   </form></aside>`;
 }
 function usRead(){const g=k=>document.getElementById('usf-'+k),v=k=>g(k)?g(k).value.trim():'';const isNew=U.usEd==='new',old=isNew?{}:S.users.find(x=>x.id===U.usEd)||{};
-  return {name:v('name').replace(/\s+/g,' '),email:v('email').toLowerCase(),kind:g('kind')&&!g('kind').disabled?g('kind').value:(old.kind||'rec'),p:g('p')?v('p').replace(/\s+/g,' '):(old.p||''),active:g('active')?g('active').checked:(isNew?true:old.active!==false)}}
+  const nm=v('name').replace(/\s+/g,' ');return {name:nm,pw:g('pw')?g('pw').value:'',kind:g('kind')&&!g('kind').disabled?g('kind').value:(old.kind||'rec'),p:nm,active:g('active')?g('active').checked:(isNew?true:old.active!==false),perm:usPerm(old)}}
+function usPerm(old){const g=k=>document.getElementById('usf-'+k);if(!g('pm-bill'))return old.perm;if(g('pm-bill').disabled&&g('nav-timesheets').disabled)return old.perm;
+  const kind=g('kind')&&!g('kind').disabled?g('kind').value:old.kind;const o={nav:ALLNAV.filter(n=>n==='home'||g('nav-'+n).checked)};PKEYS.forEach(k=>o[k]=g('pm-'+k).checked?1:0);
+  if(!(o.bill&&o.pay))o.margin=0;return permDiff(kind,o)||undefined}
 function saveUser(){
   const isNew=U.usEd==='new',o=usRead(),e={};
-  if(!o.name)e.name='Enter the person\'s name';
-  if(!o.email)e.email='Enter a work email';else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email))e.email='This doesn\'t look like an email';
-  else if(S.users.some(u=>u.id!==U.usEd&&u.email.toLowerCase()===o.email))e.email='Another user already has this email';
-  if(SCOPED.includes(o.kind)&&!o.p)e.p='Needed so the app knows which placements they see';
+  if(!o.name)e.name='Enter a username';
+  else if(S.users.some(u=>u.id!==U.usEd&&u.name.toLowerCase()===o.name.toLowerCase()))e.name='Another user already has this username';
+  if(isNew&&!o.pw)e.pw='Enter a password';else if(o.pw&&o.pw.length<6)e.pw='Use at least 6 characters';
   const admins=S.users.filter(u=>u.id!==U.usEd&&u.kind==='admin'&&u.active!==false).length;
   if(!isNew&&!admins&&(o.kind!=='admin'||!o.active))e.active='Keep at least one active admin';
   if(Object.keys(e).length){U.usErr=e;U.usDraft=Object.assign({},o,{id:U.usEd});render();return}
+  const pw=o.pw;delete o.pw;if(pw)o.pw=pw;
   if(isNew)S.users.push(Object.assign(o,{id:'u'+Date.now().toString(36),added:ASOF}));
   else{const u=S.users.find(x=>x.id===U.usEd);const ch=u.name!==o.name||u.kind!==o.kind||u.p!==o.p;Object.assign(u,o);if(ch)delete u.label}
+  S.users.forEach(u=>{if(!u.perm)delete u.perm});
   save();U.usEd=null;U.usErr=null;U.usDraft=null;render();
 }
 
@@ -1046,6 +1063,7 @@ const ACT={
   'rep':d=>{U.rep=d.v;render()},
   'us-new':()=>{U.usEd='new';U.usErr=null;U.usDraft=null;render();const i=document.getElementById('usf-name');if(i)i.focus()},
   'us-edit':d=>{U.usEd=d.v;U.usErr=null;U.usDraft=null;render()},
+  'us-reset':()=>{U.usDraft=Object.assign(usRead(),{id:U.usEd,perm:undefined});render()},
   'us-close':()=>{U.usEd=null;U.usErr=null;U.usDraft=null;render()},
   'us-f':d=>{U.usF=d.v;render()},
   'as':d=>{S.role=d.v;save();render();window.scrollTo(0,0)},
@@ -1076,7 +1094,8 @@ document.addEventListener('input',e=>{const el=e.target,f=el.dataset.f;
 document.addEventListener('change',e=>{const el=e.target,f=el.dataset.f;
   if(el.id==='role'){S.role=el.value;save();U.recSel=null;render();return}
   if(f==='wk'){U.wk=el.value;U.tsSel=null;render()}
-  if(f==='uskind'){U.usDraft=Object.assign(usRead(),{id:U.usEd});U.usErr=null;render()}
+  if(f==='uskind'){U.usDraft=Object.assign(usRead(),{id:U.usEd,perm:undefined});U.usErr=null;render()}
+  if(f==='usperm'){U.usDraft=Object.assign(usRead(),{id:U.usEd});render()}
   if(f==='arc'){U.arC=el.value;render()}
   if(f==='invw'){U.invW=el.value;render()}
   if(f==='payd'){U.payDate=el.value.slice(2);render()}
