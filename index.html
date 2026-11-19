@@ -251,12 +251,12 @@ function client(n){const b=D.clients.concat(S.xc||[]).find(c=>c.name===n)||{name
 function calc(c,t){
   const cl=client(c.client), L=(S.load[c.pt]??20)/100, k=1-cl.msp;
   const [st,ot,hol,on,cb,dt,pto]=t.h;
-  const n={st:c.bST*k,ot:c.bOT*k,hol:c.bHol*k,on:c.bOn*k,cb:c.bCb*k};
+  const md=+cl.mspD||0,nr=r=>r?Math.max(0,r*k-md):0;const n={st:nr(c.bST),ot:nr(c.bOT),hol:nr(c.bHol),on:nr(c.bOn),cb:nr(c.bCb)};
   const billST=st*n.st, bill=billST+ot*n.ot+hol*n.hol+on*n.on+cb*n.cb+dt*n.hol;
   const payST=st*c.pST, stipAmt=st*c.stip, pay=payST+ot*c.pOT+hol*c.pHol+on*c.pOn+cb*c.pCb+stipAmt;
   const gp=billST-payST*(1+L), adj=gp*(1-cl.scomm/100);
   const rr=(n.st-(c.pST*(1+L)+c.stip))*(1-cl.scomm/100);
-  return {bill,billST,pay,payST,stipAmt,gp,adj,gpm:billST?gp/billST*100:0,rr,spread:rr*(st-pto),msp:cl.msp,terms:cl.terms,n,L,hours:st+ot+hol+on+cb+dt};
+  return {bill,billST,pay,payST,stipAmt,gp,adj,gpm:billST?gp/billST*100:0,rr,spread:rr*(st-pto),msp:cl.msp,mspD:md,terms:cl.terms,n,L,hours:st+ot+hol+on+cb+dt};
 }
 function payDate(c,wk,terms){if(c.pt==='CTOC')return addD(eom1(wk),terms);if(c.weekly)return addD(wk,12);return D.cal[wk]||addD(wk,19)}
 function line(name,wk){const c=C[name],t=S.ts[name+'|'+wk];const r=calc(c,t);return {k:name+'|'+wk,name,wk,c,t,r,due:addD(wk,r.terms),pd:payDate(c,wk,r.terms)}}
@@ -414,7 +414,7 @@ function explain(){
   const k=U.tsSel;if(!k)return '<div class="empty">Pick a row to see how it is worked out.</div>';
   const i=k.indexOf('|'),name=k.slice(0,i),wk=k.slice(i+1),c=C[name],t=S.ts[k]||{h:[0,0,0,0,0,0,0]},r=calc(c,t),pm=PM();
   const [st,ot,hol,on,cb]=t.h;let h=`<h2 style="font-size:16px">How this row is worked out</h2><div class="sm-t" style="margin:2px 0 10px">${esc(name)} · ${esc(c.client)} · week ending ${fd(wk)}</div><div class="math"><div><span>Timesheet #</span><span>${t.tsn?esc(t.tsn):'<span class="err">missing</span>'}</span></div>${pm.bill?`<div><span>Invoice #</span><span>${t.invn?esc(t.invn):'<span class="mut">not invoiced yet</span>'}</span></div>`:''}${t.exp?`<div><span>Expense (recorded, not added to the bill, as in sheet)</span><span>${$m(+t.exp)}</span></div>`:''}<div style="height:8px"></div>`;
-  if(pm.bill){h+=`<div><span>${$n(st)} h × ${$m(c.bST)} less ${(r.msp*100).toFixed(2)}% MSP</span><span>${$m(st*r.n.st)}</span></div>`;
+  if(pm.bill){h+=`<div><span>${$n(st)} h × ${$m(c.bST)} less ${(r.msp*100).toFixed(2)}% MSP${r.mspD?' and '+$m(r.mspD)+'/h MSP':''}</span><span>${$m(st*r.n.st)}</span></div>`;
     if(ot)h+=`<div><span>${$n(ot)} h overtime × ${$m(r.n.ot)}</span><span>${$m(ot*r.n.ot)}</span></div>`;if(hol)h+=`<div><span>${$n(hol)} h holiday × ${$m(r.n.hol)}</span><span>${$m(hol*r.n.hol)}</span></div>`;
     if(on)h+=`<div><span>${$n(on)} h on-call × ${$m(r.n.on)}</span><span>${$m(on*r.n.on)}</span></div>`;if(cb)h+=`<div><span>${$n(cb)} h call-back × ${$m(r.n.cb)}</span><span>${$m(cb*r.n.cb)}</span></div>`;if(t.h[5])h+=`<div><span>${$n(t.h[5])} h double time × ${$m(r.n.hol)} (holiday rate, as in sheet)</span><span>${$m(t.h[5]*r.n.hol)}</span></div>`;
     h+=`<div class="tot"><span>Bill to ${esc(c.client)}</span><span>${$m(r.bill)}</span></div><div><span>Invoice due (${r.terms} days)</span><span>${fd(addD(wk,r.terms))}</span></div><div style="height:8px"></div>`}
@@ -569,7 +569,11 @@ function invClient(all){
   <section class="card pad"><h2 style="font-size:15px;margin-bottom:8px">This client's terms (used in every calculation)</h2><div class="terms">
    <div><span>MSP fee</span><b>${pc2(cl.msp)}</b><small>taken off every bill rate</small></div>
    <div><span>Pays in</span><b>${cl.terms} days</b><small>after the week ends</small></div>
-   <div><span>Sales commission</span><b>${cl.scomm||0}%</b><small>of profit, to sales</small></div></div></section>
+   ${cl.mspD?`<div><span>MSP fee $</span><b>${$m(cl.mspD)}/h</b><small>taken off every billed hour</small></div>`:''}
+   <div><span>Sales commission</span><b>${cl.scomm||0}%</b><small>of profit, to sales</small></div>
+   <div><span>OT / DT bill</span><b>× ${cl.otx??'—'} / × ${cl.dtx??'—'}</b><small>client side</small></div>
+   <div><span>OT / DT pay</span><b>× ${cl.pOTx??'—'} / × ${cl.pDTx??'—'}</b><small>contractor side</small></div>
+   ${cl.info1||cl.info2?`<div><span>Additional info</span><b>${esc([cl.info1,cl.info2].filter(Boolean).join(' · '))}</b></div>`:''}</div></section>
   <section class="card tbl"><table class="clist"><thead><tr><th>Candidate placed here</th><th>Type</th><th>Status</th><th class="n">Weeks</th><th class="n">Hours</th><th class="n">Billed</th><th class="n">Received</th><th class="n">Still owed</th><th></th></tr></thead><tbody>
   ${rows.map(r=>`<tr class="click${isActive(r.c)?'':' ended'}" data-act="inv-n" data-v="${esc(r.c.name)}"><td><div class="nm">${esc(r.c.name)}</div><div class="sm-t">${esc(r.c.title&&r.c.title!=='CTOC'?r.c.title:'')}</div></td><td>${pill(r.c.pt,r.c.pt==='W2'?'info':'')}</td><td>${isActive(r.c)?pill('Working','good'):pill('Ended')}<div class="sm-t">${isActive(r.c)?'since '+fd(r.c.start):fd(r.c.start)+' – '+fd(r.c.end)}</div></td><td class="n">${r.it.length}</td><td class="n">${$n(r.hrs,2)}</td><td class="n">${$m(r.billed)}</td><td class="n">${$m(r.got)}</td><td class="n"><b class="${r.late?'lowm':''}">${r.bal>0.01?$m(r.bal):'—'}</b>${r.late?'<div class="sm-t">has late weeks</div>':''}</td><td><button class="btn sm pri" data-act="inv-n" data-v="${esc(r.c.name)}">View</button></td></tr>`).join('')||'<tr><td colspan="9" class="empty">Nobody placed here that you can see.</td></tr>'}
   </tbody></table></section>`;
@@ -866,11 +870,11 @@ V.clients=()=>{
   const cnt={};S.cands.forEach(c=>{const k=c.client;cnt[k]=cnt[k]||{a:0,t:0};cnt[k].t++;if(isActive(c))cnt[k].a++});
   const cl=ALLCL().map(c=>client(c.name)).filter(c=>!q||c.name.toLowerCase().includes(q)).sort((a,b)=>((cnt[b.name]||{t:0}).t>0)-((cnt[a.name]||{t:0}).t>0)||a.name.localeCompare(b.name));
   let out=head('Clients','',`<label class="fld" style="min-width:220px"><span>Find a client</span><input class="in" id="clq" data-f="clq" placeholder="Client name" value="${esc(U.clQ||'')}"></label>${ed?'<button class="btn pri" data-act="cl-new">+ Add client</button>':''}`)+
-  `<div class="card tbl"><table class="clist"><thead><tr><th>Client</th><th class="n">MSP fee</th><th class="n">Pays in</th><th class="n">OT bill ×</th><th class="n">DT bill ×</th><th class="n">Sales comm.</th><th class="n">Candidates</th><th></th></tr></thead><tbody>
-  ${cl.map(c=>{const k=cnt[c.name];return `<tr class="${ed?'click':''}" ${ed?`data-act="cl-edit" data-n="${esc(c.name)}"`:''}><td class="nm">${esc(c.name)}${(S.xc||[]).some(x=>x.name===c.name)?' '+pill('New','info'):''}</td><td class="n">${pc2(c.msp)}</td><td class="n">${c.terms} days</td><td class="n">${c.otx}</td><td class="n">${c.dtx}</td><td class="n">${c.scomm||0}%</td><td class="n">${k?`${k.t}<div class="sm-t">${k.a} working</div>`:'<span class="mut">none</span>'}</td><td>${ed?`<button class="btn sm" data-act="cl-edit" data-n="${esc(c.name)}">Edit</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">No clients match.</td></tr>'}
+  `<div class="card tbl"><table class="clist"><thead><tr><th>Client</th><th class="n">MSP fee</th><th class="n">MSP $/hr</th><th class="n">Pays in</th><th class="n">OT bill ×</th><th class="n">DT bill ×</th><th class="n">OT pay ×</th><th class="n">DT pay ×</th><th class="n">Sales comm.</th><th class="n">Candidates</th><th></th></tr></thead><tbody>
+  ${cl.map(c=>{const k=cnt[c.name];return `<tr class="${ed?'click':''}" ${ed?`data-act="cl-edit" data-n="${esc(c.name)}"`:''}><td class="nm">${esc(c.name)}${(S.xc||[]).some(x=>x.name===c.name)?' '+pill('New','info'):''}</td><td class="n">${pc2(c.msp)}</td><td class="n">${c.mspD?$m(c.mspD):'<span class="mut">—</span>'}</td><td class="n">${c.terms} days</td><td class="n">${c.otx}</td><td class="n">${c.dtx}</td><td class="n">${c.pOTx??'—'}</td><td class="n">${c.pDTx??'—'}</td><td class="n">${c.scomm||0}%</td><td class="n">${k?`${k.t}<div class="sm-t">${k.a} working</div>`:'<span class="mut">none</span>'}</td><td>${ed?`<button class="btn sm" data-act="cl-edit" data-n="${esc(c.name)}">Edit</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No clients match.</td></tr>'}
   </tbody></table></div><div class="sm-t">${ALLCL().length} clients · ${Object.keys(cnt).length} with candidates placed. Changes recalculate every screen right away.</div>`;
   if(U.clEd&&ed){
-    const isNew=U.clEd==='new',c=U.clDraft||(isNew?{name:'',msp:0,terms:30,otx:1.5,dtx:2,scomm:0}:client(U.clEd)),e=U.clErr||{};
+    const isNew=U.clEd==='new',c=U.clDraft||(isNew?{name:'',msp:0,mspD:0,terms:30,otx:1.5,dtx:2,pOTx:1.5,pDTx:2,scomm:0,info1:'',info2:''}:client(U.clEd)),e=U.clErr||{};
     const er=k=>e[k]?`<span class="err">${e[k]}</span>`:'';
     const f=(k,lab,v,x='')=>`<label class="fld"><span>${lab}</span><input class="in" id="clf-${k}" value="${esc(v??'')}" ${x}>${er(k)}</label>`;
     const k=cnt[c.name],canDel=!isNew&&(S.xc||[]).some(x=>x.name===c.name)&&!k;
@@ -879,13 +883,24 @@ V.clients=()=>{
     <form id="clf" class="dr-b" novalidate>
      <div class="sm-t">Fields marked <b class="req">*</b> are required.</div>
      <section class="card csec"><h3>Client</h3><div class="formgrid">${f('name','Client name'+RQ_,c.name,isNew?'autocomplete="off"':'readonly')}</div>${isNew?'':'<div class="sm-t" style="margin-top:6px">The name can\'t change because candidates and invoices are filed under it.</div>'}</section>
-     <section class="card csec"><h3>Billing terms</h3><div class="formgrid">
-      ${f('msp','MSP fee %'+RQ_,+(c.msp*100).toFixed(4),'inputmode="decimal"')}
-      ${f('terms','Pays in (days after week ends)'+RQ_,c.terms,'inputmode="numeric"')}
+     <section class="card csec"><h3>Fees taken off the bill</h3><div class="formgrid">
+      ${f('msp','MSP fee %'+RQ_,+((c.msp||0)*100).toFixed(4),'inputmode="decimal"')}
+      ${f('mspD','MSP fee $ per hour',c.mspD||0,'inputmode="decimal"')}
+      ${f('scomm','Sales commission % of profit',c.scomm||0,'inputmode="decimal"')}</div>
+      <div class="sm-t" style="margin-top:8px">MSP fees come off every billed hour. Sales commission comes off gross profit (15% for ULTA and HITACHI in the workbook). <span class="pill warn">Confirm</span> the sheet has an “MSP dollar” column but no formula uses it; here it's taken off each billed hour.</div></section>
+     <section class="card csec"><h3>Overtime &amp; double time</h3><div class="formgrid">
       ${f('otx','OT bill multiplier',c.otx,'inputmode="decimal"')}
       ${f('dtx','DT bill multiplier',c.dtx,'inputmode="decimal"')}
-      ${f('scomm','Sales commission % of profit',c.scomm||0,'inputmode="decimal"')}</div>
-      <div class="sm-t" style="margin-top:8px">Example: a $100.00 bill rate becomes ${$m(100*(1-(+c.msp||0)))} after the MSP fee; invoices are due ${c.terms||0} days after the week ends.</div></section>
+      ${f('pOTx','OT pay multiplier',c.pOTx??1.5,'inputmode="decimal"')}
+      ${f('pDTx','DT pay multiplier',c.pDTx??2,'inputmode="decimal"')}</div>
+      <div class="sm-t" style="margin-top:8px">Bill multipliers set what the client is charged for OT and DT. Pay multipliers set what the contractor is paid. Use 0 if the client doesn't allow OT or DT.</div></section>
+     <section class="card csec"><h3>Payment terms</h3><div class="formgrid">
+      ${f('terms','Pays in (days after week ends)'+RQ_,c.terms,'inputmode="numeric"')}</div>
+      <div class="sm-t" style="margin-top:8px">Employer cost on top of pay is the same for every client: W2 ${S.load.W2}%, CTOC ${S.load.CTOC}%. Change it in Settings.</div></section>
+     <section class="card csec"><h3>Additional info</h3><div class="formgrid">
+      ${f('info1','Additional info 1',c.info1||'','autocomplete="off"')}
+      ${f('info2','Additional info 2',c.info2||'','autocomplete="off"')}</div></section>
+     <section class="card csec"><h3>Example</h3><div class="sm-t">${(()=>{const b=100,n=Math.max(0,b*(1-(+c.msp||0))-(+c.mspD||0)),ot=b*(+c.otx||0);return `A ${$m(b)} ST bill rate nets <b>${$m(n)}</b> after MSP fees. OT bills at ${$m(ot)} (nets ${$m(Math.max(0,ot*(1-(+c.msp||0))-(+c.mspD||0)))}). A $50.00 pay rate pays ${$m(50*(+c.pOTx||0))} for OT and ${$m(50*(+c.pDTx||0))} for DT. Invoices are due ${c.terms||0} days after the week ends.`})()}</div></section>
      ${!isNew&&k?`<div class="note">${k.t} candidate${k.t>1?'s are':' is'} placed here (${k.a} working). Changing these terms recalculates their billing, profit and commission.</div>`:''}
      <div class="row"><button class="btn pri" type="submit">${isNew?'Add client':'Save changes'}</button><button class="btn" type="button" data-act="cl-close">Cancel</button>${canDel?`<button class="btn" type="button" data-act="cl-del" style="margin-left:auto;color:var(--bad)">${U.clDelC?'Click again to delete':'Delete client'}</button>`:''}${Object.keys(e).length?'<span class="err">Fix the fields marked in red.</span>':''}</div>
     </form></aside>`;
@@ -895,14 +910,14 @@ V.clients=()=>{
 const RQ_='<b class="req" aria-label="required"> *</b>';
 function saveClient(){
   const g=k=>document.getElementById('clf-'+k),v=k=>g(k)?g(k).value.trim():'',isNew=U.clEd==='new',e={},num=(k,req)=>{const r=v(k);if(r===''){if(req)e[k]='Required';return 0}const n=parseFloat(r);if(!(n>=0))e[k]='Enter a number, 0 or more';return n};
-  const o={name:isNew?v('name').replace(/\s+/g,' '):U.clEd,msp:num('msp',1)/100,terms:Math.round(num('terms',1)),otx:num('otx')||1,dtx:num('dtx')||1,scomm:num('scomm')};
+  const o={name:isNew?v('name').replace(/\s+/g,' '):U.clEd,msp:num('msp',1)/100,mspD:num('mspD'),terms:Math.round(num('terms',1)),otx:num('otx'),dtx:num('dtx'),pOTx:num('pOTx'),pDTx:num('pDTx'),scomm:num('scomm'),info1:v('info1'),info2:v('info2')};
   if(!o.name)e.name='Enter the client name';else if(isNew&&ALLCL().some(c=>c.name.toLowerCase()===o.name.toLowerCase()))e.name='This client already exists';
   if(!e.msp&&o.msp>=1)e.msp='Must be under 100%';
   if(!e.scomm&&o.scomm>=100)e.scomm='Must be under 100%';
   if(Object.keys(e).length){U.clErr=e;U.clDraft=Object.assign({},o,{msp:o.msp});render();return}
   S.xc=S.xc||[];
-  if(isNew)S.xc.push(Object.assign(o,{pOTx:1.5,pDTx:2}));
-  else{const x=S.xc.find(y=>y.name===o.name);if(x)Object.assign(x,o);else S.clients[o.name]={msp:o.msp,terms:o.terms,otx:o.otx,dtx:o.dtx,scomm:o.scomm}}
+  if(isNew)S.xc.push(o);
+  else{const x=S.xc.find(y=>y.name===o.name);if(x)Object.assign(x,o);else{const z=Object.assign({},o);delete z.name;S.clients[o.name]=z}}
   save();U.clEd=null;U.clErr=null;U.clDraft=null;render();
 }
 V.settings=()=>{
