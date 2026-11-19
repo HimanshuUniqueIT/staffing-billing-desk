@@ -270,9 +270,13 @@ function ar(l){
 const hasHours=(n,w)=>{const t=S.ts[n+'|'+w];return !!(t&&t.h.some(x=>x>0))};
 const activeIn=w=>S.cands.filter(c=>inScope(c)&&c.start<=w&&(!c.end||c.end>=addD(w,-6)));
 const isActive=c=>!c.end||c.end>=ASOF;
-function bandIdx(v){let i=0;D.grid.spread.forEach((s,j)=>{if(v>=s)i=j});return i}
-function tierIdx(v){let i=0;D.grid.gpTiers.forEach((s,j)=>{if(v>=s)i=j});return i}
+function CM(mon){const lk=mon&&S.locks['comm|'+mon];if(lk&&lk.rules)return lk.rules;const g=S.cm||{};
+  return {grid:g.grid||'gp',unit:S.unit||'mult',minWk:g.minWk??6,spread:g.spread||D.grid.spread,gpTiers:g.gpTiers||D.grid.gpTiers,gp:g.gp||D.grid.gp,gpmTiers:g.gpmTiers||D.grid.gpmTiers,gpm:g.gpm||D.grid.gpm}}
+const cmTiers=R=>R.grid==='gpm'?R.gpmTiers:R.gpTiers,cmRates=R=>R.grid==='gpm'?R.gpm:R.gp;
+function bandIdx(v,R=CM()){let i=0;R.spread.forEach((s,j)=>{if(v>=s)i=j});return i}
+function tierIdx(v,R=CM()){let i=0;cmTiers(R).forEach((s,j)=>{if(v>=s)i=j});return i}
 function commission(mon){
+  const RU=CM(mon),RT=cmRates(RU),mul=RU.unit==='pct'?0.01:1;
   const wks=WEEKS.filter(w=>w.slice(0,7)===mon);
   const recs=[...new Set(S.cands.map(c=>c.rec))].filter(r=>r&&r!=='Gone').sort();
   return recs.map(R=>{
@@ -280,13 +284,14 @@ function commission(mon){
       const per=wks.map(w=>hasHours(c.name,w)?calc(c,S.ts[c.name+'|'+w]):null);
       const rr=calc(c,{h:[0,0,0,0,0,0,0]}).rr;
       const tenure=Math.round(dd(c.end||ASOF,c.start)/7);
-      return {c,per,rr,elig:tenure>=6,tenure};
+      return {c,per,rr,gpm:recGPM(c),elig:tenure>=RU.minWk,tenure};
     }).filter(x=>x.per.some(p=>p));
     const weekTot=wks.map((w,i)=>sum(lines,x=>x.per[i]?x.per[i].spread:0));
-    const band=weekTot.map(bandIdx);
-    lines.forEach(x=>{x.tier=tierIdx(x.rr);x.weeks=x.per.map((p,i)=>p?{spread:p.spread,rate:D.grid.gp[band[i]][x.tier],comm:x.elig?p.spread*D.grid.gp[band[i]][x.tier]*(S.unit==='pct'?0.01:1):0}:null);
+    const band=weekTot.map(v=>bandIdx(v,RU));
+    lines.forEach(x=>{x.tier=tierIdx(RU.grid==='gpm'?x.gpm:x.rr,RU);x.weeks=x.per.map((p,i)=>p?{spread:p.spread,rate:RT[band[i]][x.tier],comm:x.elig?p.spread*RT[band[i]][x.tier]*mul:0}:null);
       x.spread=sum(x.weeks,w=>w&&w.spread);x.comm=sum(x.weeks,w=>w&&w.comm)});
-    return {R,lines,wks,weekTot,band,spread:sum(lines,x=>x.spread),comm:sum(lines,x=>x.comm)};
+    const gc=sum(lines,x=>x.comm),adj=(S.cadj||{})[mon+'|'+R]||null;
+    return {R,lines,wks,weekTot,band,RU,spread:sum(lines,x=>x.spread),gcomm:gc,adj,comm:gc+(adj?+adj.amt||0:0)};
   }).filter(r=>r.lines.length);
 }
 
@@ -823,18 +828,19 @@ function V_payHist(){
   </tbody><tfoot><tr><td>Total · ${rows.length} pay dates</td><td></td><td></td><td class="n">${$n(sum(rows,r=>sum(r.w2,l=>l.r.hours)))}</td><td class="n">${$m(sum(rows,r=>sum(r.w2,l=>l.r.pay)))}</td><td class="n">${$m(sum(rows,r=>sum(r.ct,l=>l.r.pay)))}</td><td colspan="4"></td></tr></tfoot></table></div>
   <div class="sm-t">${rows.filter(r=>r.lk).length} closed · ${rows.filter(r=>!r.lk&&r.d<=ASOF).length} still open · ${rows.filter(r=>r.d>ASOF).length} upcoming. Click a pay date to open that pay run.</div>`;
 }
-const tierLab=i=>'$'+D.grid.gpTiers[i]+(i<5?'–'+(D.grid.gpTiers[i+1]-0.01).toFixed(2):'+');
-const bandLab=i=>'Band '+(i+1)+' ('+$m(D.grid.spread[i],0)+(i<4?'–'+$m(D.grid.spread[i+1]-1,0):'+')+')';
+const tierLab=(i,R=CM())=>{const t=cmTiers(R),g=R.grid==='gpm',f=v=>g?(+v.toFixed(2))+'%':'$'+(+v).toFixed(2);return i<t.length-1?f(t[i])+'–'+f(t[i+1]-0.01):f(t[i])+'+'};
+const bandLab=(i,R=CM())=>'Band '+(i+1)+' ('+$m(R.spread[i],0)+(i<R.spread.length-1?'–'+$m(R.spread[i+1]-1,0):'+')+')';
+const gridName=R=>R.grid==='gpm'?'gross margin %':'profit per hour';
 const recGPM=c=>{const cl=client(c.client),r=calc(c,ZERO),n=r.n,L=r.L,raw=n.st-(c.pST*(1+L)+c.stip),adj=n.st*(1-cl.msp)-raw*cl.scomm/100;return adj?r.rr/adj*100:0};
 function cmFull(x,data,monSel,locked){
   const f=U.cmF||'all',ls=x.lines.filter(l=>f==='all'||(f==='q'?l.elig:!l.elig)),i=data.indexOf(x);
   const used=new Set();x.lines.forEach(l=>l.weeks.forEach((w,k)=>{if(w)used.add(x.band[k]+'-'+l.tier)}));
-  const grid=`<div class="tbl"><table class="mgrid"><thead><tr><th>Band · weekly spread</th>${D.grid.gpTiers.map((t,j)=>`<th class="n">${tierLab(j)}</th>`).join('')}</tr></thead><tbody>${D.grid.gp.map((row,b)=>`<tr><td class="sm-t">${bandLab(b)}</td>${row.map((v,j)=>`<td class="n ${used.has(b+'-'+j)?'hit':''}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const RU=x.RU,pm=PM();const grid=`<div class="tbl"><table class="mgrid"><thead><tr><th>Band · weekly spread</th>${cmTiers(RU).map((t,j)=>`<th class="n">${tierLab(j,RU)}</th>`).join('')}</tr></thead><tbody>${cmRates(RU).map((row,b)=>`<tr><td class="sm-t">${bandLab(b,RU)}</td>${row.map((v,j)=>`<td class="n ${used.has(b+'-'+j)?'hit':''}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   let rows='',G={st:0,pto:0,sp:0,cm:0,n:0};
   ls.forEach(l=>{const c=l.c;let T={st:0,pto:0,sp:0,cm:0,n:0},first=true;
     x.wks.forEach((w,k)=>{const wk=l.weeks[k];if(!wk)return;const h=S.ts[c.name+'|'+w].h;T.st+=h[0];T.pto+=h[6];T.sp+=wk.spread;T.cm+=wk.comm;T.n++;
-      rows+=`<tr class="wkr"><td>${first?`<span class="nm">${esc(c.name)}</span>`:''}</td><td>${first?esc(c.client):''}</td><td class="sm-t">${first?fd(c.start):''}</td><td class="sm-t">${first?(c.end?fd(c.end):'—'):''}</td><td>${first?(l.elig?pill('Qualified','good'):pill('Not qualified','warn')):''}</td><td class="n sm-t">${first?pct(recGPM(c)):''}</td><td class="n">${first?r4(l.rr):''}</td><td>${first?tierLab(l.tier):''}</td>
-      <td>${fd(w)}</td><td class="n">${wkNum(w)}</td><td class="n">${$n(h[0])}</td><td class="n">${h[6]?$n(h[6]):'<span class="z">0</span>'}</td><td class="n">${$m(wk.spread)}</td><td class="n sm-t">${$m(x.weekTot[k])}</td><td>Band ${x.band[k]+1}</td><td class="n">× ${wk.rate}${S.unit==='pct'?'%':''}</td><td class="n">${l.elig?$m(wk.comm):'<span class="z">$0.00</span>'}</td></tr>`;first=false});
+      rows+=`<tr class="wkr"><td>${first?`<span class="nm">${esc(c.name)}</span>`:''}</td><td>${first?esc(c.client):''}</td><td class="sm-t">${first?fd(c.start):''}</td><td class="sm-t">${first?(c.end?fd(c.end):'—'):''}</td><td>${first?(l.elig?pill('Qualified','good'):pill('Not qualified','warn')):''}</td><td class="n sm-t">${first?pct(l.gpm):''}</td><td class="n">${first?r4(l.rr):''}</td><td>${first?tierLab(l.tier,RU):''}</td>
+      <td>${fd(w)}</td><td class="n">${wkNum(w)}</td><td class="n">${$n(h[0])}</td><td class="n">${h[6]?$n(h[6]):'<span class="z">0</span>'}</td><td class="n">${$m(wk.spread)}</td><td class="n sm-t">${$m(x.weekTot[k])}</td><td>Band ${x.band[k]+1}</td><td class="n">× ${wk.rate}${RU.unit==='pct'?'%':''}</td><td class="n">${l.elig?$m(wk.comm):'<span class="z">$0.00</span>'}</td></tr>`;first=false});
     if(!T.n)return;G.st+=T.st;G.pto+=T.pto;G.sp+=T.sp;G.cm+=T.cm;G.n+=T.n;
     rows+=`<tr class="ptot"><td colspan="8"><b>${esc(c.name)} Total</b></td><td class="sm-t">${T.n} week${T.n>1?'s':''}</td><td></td><td class="n">${$n(T.st)}</td><td class="n">${$n(T.pto)}</td><td class="n"><b>${$m(T.sp)}</b></td><td></td><td></td><td></td><td class="n"><b class="gainm">${$m(T.cm)}</b></td></tr>`});
   const bs=x.wks.map((w,k)=>`<div class="bandwk"><span class="sm-t">${fds(w)} · wk ${wkNum(w)}</span><b>${$m(x.weekTot[k])}</b>${x.weekTot[k]>0?pill('Band '+(x.band[k]+1),'info'):'<span class="sm-t">no hours</span>'}</div>`).join('');
@@ -842,25 +848,30 @@ function cmFull(x,data,monSel,locked){
   head(esc(x.R)+' · commission',`${monLabel(U.mon)} · ${ls.length} placement${ls.length===1?'':'s'}${locked?' · ✓ month approved & locked':''}`,
    `${monSel}<div class="fld"><span>Placements</span><div class="chips">${[['all','All'],['q','Qualified'],['nq','Not qualified']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" data-act="cm-f" data-v="${k}">${l}</button>`).join('')}</div></div>
    <div class="row" style="gap:6px"><button class="btn sm" data-act="cm-step" data-d="-1" ${i===0?'disabled':''}>← Previous recruiter</button><button class="btn sm" data-act="cm-step" data-d="1" ${i===data.length-1?'disabled':''}>Next recruiter →</button></div>`)+
-  `<section class="card pad"><div class="sm-t" style="margin-bottom:8px">Recruiter's total spread each week → band (all placements added up)</div><div class="bandrow">${bs}<div class="bandwk bandtot"><span class="sm-t">Month total · ${x.wks.length} weeks</span><b>${$m(sum(x.weekTot,v=>v))}</b><span class="sm-t">Commission <b class="gainm">${$m(x.comm)}</b></span></div></div></section>
-  <div class="card tbl ptab cmtab"><table><thead><tr><th>Placement</th><th>Client</th><th>Start date</th><th>End date</th><th>6 weeks criteria</th><th class="n">Recruiter GPM</th><th class="n">Recruiter run rate</th><th>Tier</th><th>Week ending</th><th class="n">Week #</th><th class="n">ST hours</th><th class="n">PTO</th><th class="n">Weekly spread</th><th class="n">Recruiter week total</th><th>Band</th><th class="n">Rate</th><th class="n">Commission</th></tr></thead>
+  `<section class="card pad"><div class="sm-t" style="margin-bottom:8px">Recruiter's total spread each week → band (all placements added up)</div><div class="bandrow">${bs}<div class="bandwk bandtot"><span class="sm-t">Month total · ${x.wks.length} weeks</span><b>${$m(sum(x.weekTot,v=>v))}</b><span class="sm-t">Commission <b class="gainm">${$m(x.comm)}</b>${x.adj?` (incl. ${$m(+x.adj.amt)} adjustment)`:''}</span></div></div></section>
+  <div class="card tbl ptab cmtab"><table><thead><tr><th>Placement</th><th>Client</th><th>Start date</th><th>End date</th><th>${RU.minWk} weeks criteria</th><th class="n">Recruiter GPM</th><th class="n">Recruiter run rate</th><th>Tier</th><th>Week ending</th><th class="n">Week #</th><th class="n">ST hours</th><th class="n">PTO</th><th class="n">Weekly spread</th><th class="n">Recruiter week total</th><th>Band</th><th class="n">Rate</th><th class="n">Commission</th></tr></thead>
   <tbody>${rows||'<tr><td colspan="17" class="empty">No placements match this filter.</td></tr>'}</tbody>
   ${G.n?`<tfoot><tr><td colspan="8">Grand Total · ${ls.length} placements</td><td>${G.n} weeks</td><td></td><td class="n">${$n(G.st)}</td><td class="n">${$n(G.pto)}</td><td class="n">${$m(G.sp)}</td><td></td><td></td><td></td><td class="n">${$m(G.cm)}</td></tr></tfoot>`:''}</table></div>
-  <div class="sm-t">Weekly spread = recruiter run rate × (ST hours − PTO). Commission = weekly spread × rate${S.unit==='pct'?' %':''} from the grid below (band × tier). Placements under 6 weeks add to the band but earn no commission yet.</div>
-  <section class="card pad" style="display:flex;flex-direction:column;gap:8px"><h2 style="font-size:16px">Commission grid · rates used this month highlighted</h2>${grid}<div class="sm-t">Open question for the client: the workbook treats the rate as a multiplier (× 1.71); it may be meant as a percent.</div></section>`;
+  <div class="sm-t">Weekly spread = recruiter run rate × (ST hours − PTO). Commission = weekly spread × rate${RU.unit==='pct'?' %':''} from the grid below (band × tier, tier by ${gridName(RU)}). Placements under ${RU.minWk} weeks add to the band but earn no commission yet.</div>
+  <section class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2 style="font-size:16px">Adjustment this month</h2>
+  ${pm.approve&&!locked?`<div class="row" style="align-items:flex-end;flex-wrap:wrap"><label class="fld" style="width:140px"><span>Amount (+ or −)</span><input class="in" id="cma-amt" inputmode="decimal" value="${x.adj?esc(String(x.adj.amt)):''}" placeholder="e.g. 250 or -100"></label><label class="fld" style="flex:1 1 220px"><span>Reason</span><input class="in" id="cma-note" value="${x.adj?esc(x.adj.note||''):''}" placeholder="e.g. Bonus for new client, clawback for early end"></label><button class="btn pri" data-act="cm-adj-save">Save adjustment</button>${x.adj?'<button class="btn" data-act="cm-adj-clear">Remove</button>':''}</div>${U.cmAdjErr?`<span class="err">${U.cmAdjErr}</span>`:''}`
+   :(x.adj?`<div>${$m(+x.adj.amt)} · ${esc(x.adj.note||'no reason given')}</div>`:'<div class="sm-t">No adjustment.</div>')}
+  <div class="sm-t">Grid commission ${$m(x.gcomm)}${x.adj?` + adjustment ${$m(+x.adj.amt)}`:''} = <b>${$m(x.comm)}</b></div></section>
+  <section class="card pad" style="display:flex;flex-direction:column;gap:8px"><h2 style="font-size:16px">Commission grid · by ${gridName(RU)} · rates used this month highlighted</h2>${grid}<div class="sm-t">Open question for the client: the workbook treats the rate as a multiplier (× 1.71); it may be meant as a percent.</div></section>`;
 }
 V.commission=()=>{
   const pm=PM(),r=role(),months=[...new Set(WEEKS.filter(w=>w<=LAST_WK).map(w=>w.slice(0,7)))];
   let data=commission(U.mon);
   if(['rec','lead'].includes(r.kind))data=data.filter(x=>x.R===r.p);
-  const locked=S.locks['comm|'+U.mon],unit=S.unit==='mult'?'multiplier':'percent';
+  const locked=S.locks['comm|'+U.mon],RU=CM(U.mon),unit=RU.unit==='mult'?'multiplier':'percent';
   const monSel=`<label class="fld"><span>Month</span><select class="in" data-f="mon">${months.map(m=>`<option value="${m}" ${m===U.mon?'selected':''}>${monLabel(m)}</option>`).join('')}</select></label>`;
   const sx=U.cmDr&&data.find(y=>y.R===U.cmSel);if(sx)return cmFull(sx,data,monSel,locked);
-  let out=head('Commission · '+monLabel(U.mon),'',monSel+(pm.approve?(locked?'<span class="lock">✓ Approved &amp; locked</span>':`<button class="btn pri" data-act="comm-lock">Approve &amp; lock month</button>`):''))+
-  `<div class="card tbl"><table class="clist"><thead><tr><th>Recruiter</th><th class="n">Placements</th><th class="n">Qualified (6+ weeks)</th><th class="n">Weeks</th><th>Bands this month</th><th class="n">Month spread</th><th class="n">Commission</th><th></th></tr></thead><tbody>
-  ${data.map(x=>{const bs=[...new Set(x.band.filter((b,i)=>x.weekTot[i]>0))].sort();return `<tr class="click" data-act="cm-view" data-v="${esc(x.R)}"><td class="nm">${esc(x.R)}</td><td class="n">${x.lines.length}</td><td class="n">${x.lines.filter(l=>l.elig).length}</td><td class="n">${x.wks.length}</td><td>${bs.map(b=>pill('Band '+(b+1),'info')).join(' ')}</td><td class="n">${$m(x.spread)}</td><td class="n"><b class="gainm">${$m(x.comm)}</b></td><td><button class="btn sm pri" data-act="cm-view" data-v="${esc(x.R)}">View</button></td></tr>`}).join('')||'<tr><td colspan="8" class="empty">No recruiters with placements this month.</td></tr>'}
-  </tbody>${data.length?`<tfoot><tr><td>Total · ${data.length} recruiters</td><td class="n">${sum(data,x=>x.lines.length)}</td><td class="n">${sum(data,x=>x.lines.filter(l=>l.elig).length)}</td><td></td><td></td><td class="n">${$m(sum(data,x=>x.spread))}</td><td class="n">${$m(sum(data,x=>x.comm))}</td><td></td></tr></tfoot>`:''}</table></div>
-  <div class="row" style="justify-content:space-between">${pm.approve&&!locked?`<label class="fld" style="flex-direction:row;align-items:center;gap:8px"><span>Rate means</span><select class="in" style="width:auto" data-f="unit"><option value="mult" ${S.unit==='mult'?'selected':''}>Multiplier (as in workbook)</option><option value="pct" ${S.unit==='pct'?'selected':''}>Percent of spread</option></select></label>`:`<span class="sm-t">Rate unit: ${unit}</span>`}<span class="sm-t">Click a recruiter to see every placement, week, band and rate.</span></div>`;
+  let out=head('Commission · '+monLabel(U.mon),'',monSel+(pm.approve?'<button class="btn" data-act="cm-manage">Manage commission</button>'+(locked?'<span class="lock">✓ Approved &amp; locked</span><button class="btn sm" data-act="cm-unlock">Unlock</button>':`<button class="btn pri" data-act="comm-lock">Approve &amp; lock month</button>`):''))+
+  `<div class="card tbl"><table class="clist"><thead><tr><th>Recruiter</th><th class="n">Placements</th><th class="n">Qualified (${RU.minWk}+ weeks)</th><th class="n">Weeks</th><th>Bands this month</th><th class="n">Month spread</th><th class="n">Grid commission</th><th class="n">Adjustment</th><th class="n">Commission</th><th></th></tr></thead><tbody>
+  ${data.map(x=>{const bs=[...new Set(x.band.filter((b,i)=>x.weekTot[i]>0))].sort();return `<tr class="click" data-act="cm-view" data-v="${esc(x.R)}"><td class="nm">${esc(x.R)}</td><td class="n">${x.lines.length}</td><td class="n">${x.lines.filter(l=>l.elig).length}</td><td class="n">${x.wks.length}</td><td>${bs.map(b=>pill('Band '+(b+1),'info')).join(' ')}</td><td class="n">${$m(x.spread)}</td><td class="n">${$m(x.gcomm)}</td><td class="n">${x.adj?`<span title="${esc(x.adj.note||'')}">${$m(+x.adj.amt)}</span>`:'<span class="mut">—</span>'}</td><td class="n"><b class="gainm">${$m(x.comm)}</b></td><td><button class="btn sm pri" data-act="cm-view" data-v="${esc(x.R)}">View</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty">No recruiters with placements this month.</td></tr>'}
+  </tbody>${data.length?`<tfoot><tr><td>Total · ${data.length} recruiters</td><td class="n">${sum(data,x=>x.lines.length)}</td><td class="n">${sum(data,x=>x.lines.filter(l=>l.elig).length)}</td><td></td><td></td><td class="n">${$m(sum(data,x=>x.spread))}</td><td class="n">${$m(sum(data,x=>x.gcomm))}</td><td class="n">${$m(sum(data,x=>x.adj?+x.adj.amt:0))}</td><td class="n">${$m(sum(data,x=>x.comm))}</td><td></td></tr></tfoot>`:''}</table></div>
+  <div class="row" style="justify-content:space-between"><span class="sm-t">Rules${locked?' this month was approved with':''}: tier by ${gridName(RU)} · rate is a ${unit} · qualifies after ${RU.minWk} weeks</span><span class="sm-t">Click a recruiter to see every placement, week, band and rate.</span></div>`;
+  if(pm.approve&&U.cmEd)out+=cmDrawer();
   return out;
 };
 
@@ -920,16 +931,46 @@ function saveClient(){
   else{const x=S.xc.find(y=>y.name===o.name);if(x)Object.assign(x,o);else{const z=Object.assign({},o);delete z.name;S.clients[o.name]=z}}
   save();U.clEd=null;U.clErr=null;U.clDraft=null;render();
 }
+function cmDrawer(){
+  const R=U.cmDraft||JSON.parse(JSON.stringify(CM())),e=U.cmErr||{},T=cmTiers(R),G=cmRates(R),g=R.grid==='gpm';
+  const er=k=>e[k]?`<span class="err">${e[k]}</span>`:'';
+  return `<div class="dr-bg" data-act="cm-mclose"></div><aside class="drawer wide-dr" role="dialog" aria-modal="true" aria-labelledby="dr-t">
+  <div class="dr-h"><div><div class="sm-t">Commission</div><h2 id="dr-t">Manage commission</h2></div><button class="btn sm" data-act="cm-mclose" aria-label="Close">✕ Close</button></div>
+  <form id="cmf" class="dr-b" data-g="${R.grid}" novalidate>
+   <div class="note">Changes apply to months that aren't approved yet. Approved months keep the rules they were approved with.</div>
+   <section class="card csec"><h3>Rules</h3><div class="formgrid">
+    <label class="fld"><span>Pick the tier by</span><select class="in" id="cmf-grid" data-f="cmgrid"><option value="gp" ${!g?'selected':''}>Profit per hour (as in workbook)</option><option value="gpm" ${g?'selected':''}>Gross margin %</option></select></label>
+    <label class="fld"><span>Rate means</span><select class="in" id="cmf-unit"><option value="mult" ${R.unit!=='pct'?'selected':''}>Multiplier (as in workbook)</option><option value="pct" ${R.unit==='pct'?'selected':''}>Percent of spread</option></select></label>
+    <label class="fld"><span>Qualifies after (weeks)</span><input class="in" id="cmf-minwk" inputmode="numeric" value="${R.minWk}">${er('minwk')}</label></div>
+    <div class="sm-t" style="margin-top:8px"><span class="pill warn">Confirm</span> the workbook's rate looks like a multiplier, but May commission ($18,762.98) comes out above the spread it's paid on (~$14,040).</div></section>
+   <section class="card csec"><h3>Rates · band × tier</h3>
+    <div class="sm-t" style="margin-bottom:8px">Band = recruiter's total weekly spread, from this amount. Tier = ${g?'gross margin % of the placement':'profit per hour of the placement'}, from this value.</div>
+    <div class="tbl"><table class="mgrid"><thead><tr><th>Band from ($)</th>${T.map((t,j)=>`<th><input class="in h" id="cmf-t${j}" value="${t}" ${j?'':'readonly'} aria-label="Tier ${j+1} from"></th>`).join('')}</tr></thead>
+    <tbody>${G.map((row,b)=>`<tr><td><input class="in h" style="width:84px" id="cmf-b${b}" value="${R.spread[b]}" ${b?'':'readonly'} aria-label="Band ${b+1} from"></td>${row.map((v,j)=>`<td><input class="in h" id="cmf-r${b}-${j}" value="${v}" aria-label="Rate band ${b+1} tier ${j+1}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    ${er('grid')}</section>
+   <div class="row"><button class="btn pri" type="submit">Save rules</button><button class="btn" type="button" data-act="cm-mclose">Cancel</button><button class="btn" type="button" data-act="cm-reset" style="margin-left:auto">Reset to workbook</button>${Object.keys(e).length?'<span class="err">Fix the fields marked in red.</span>':''}</div>
+  </form></aside>`;
+}
+function cmRead(){const f=document.getElementById('cmf'),g=k=>document.getElementById('cmf-'+k),R=U.cmDraft||JSON.parse(JSON.stringify(CM())),k=f.dataset.g,n=x=>parseFloat(g(x).value);
+  const T=(k==='gpm'?R.gpmTiers:R.gpTiers).map((_,j)=>n('t'+j)),G=R.spread.map((_,b)=>(k==='gpm'?R.gpm:R.gp)[b].map((_,j)=>n('r'+b+'-'+j)));
+  if(k==='gpm'){R.gpmTiers=T;R.gpm=G}else{R.gpTiers=T;R.gp=G}
+  R.spread=R.spread.map((_,b)=>n('b'+b));R.unit=g('unit').value;R.minWk=parseInt(g('minwk').value,10);R.grid=g('grid').value;return R}
+function cmValid(R){const e={},inc=a=>a.every((v,i)=>v>=0&&isFinite(v)&&(!i||v>a[i-1]));
+  if(!(R.minWk>=0))e.minwk='Enter 0 or more weeks';
+  if(!inc(R.spread)||!inc(R.gpTiers)||!inc(R.gpmTiers)||![...R.gp,...R.gpm].flat().every(v=>v>=0&&isFinite(v)))e.grid='Use numbers 0 or more, with bands and tiers going up from left to right and top to bottom.';
+  return e}
+function saveCm(){const R=cmRead(),e=cmValid(R);if(Object.keys(e).length){U.cmErr=e;U.cmDraft=R;render();return}
+  S.cm={grid:R.grid,minWk:R.minWk,spread:R.spread,gpTiers:R.gpTiers,gp:R.gp,gpmTiers:R.gpmTiers,gpm:R.gpm};S.unit=R.unit;save();U.cmEd=false;U.cmDraft=null;U.cmErr=null;render()}
 V.settings=()=>{
   const pm=PM(),ed=pm.editClients;
-  const g=(arr,tiers,lab)=>`<div class="tbl"><table><thead><tr><th>Weekly spread</th>${tiers.map((t,i)=>`<th class="n">${lab}${t}${i<5?'–'+(tiers[i+1]-0.01):'+'}</th>`).join('')}</tr></thead><tbody>${arr.map((r,i)=>`<tr><td>Band ${i+1} · from ${$m(D.grid.spread[i],0)}</td>${r.map(v=>`<td class="n">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const g=(arr,tiers,lab)=>`<div class="tbl"><table><thead><tr><th>Weekly spread</th>${tiers.map((t,i)=>`<th class="n">${lab}${t}${i<tiers.length-1?'–'+(+(tiers[i+1]-0.01).toFixed(2)):'+'}</th>`).join('')}</tr></thead><tbody>${arr.map((r,i)=>`<tr><td>Band ${i+1} · from ${$m(CM().spread[i],0)}</td>${r.map(v=>`<td class="n">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   return head('Settings','')+
   `<div class="cgrid"><section class="card pad"><h2 style="font-size:16px;margin-bottom:6px">Employer cost on top of pay</h2>
   <div class="kv"><span>W2 employees</span><b>${ed?`<input class="in h" data-f="load" data-k="W2" value="${S.load.W2}" aria-label="W2 load %">`:S.load.W2}%</b></div><div class="kv"><span>CTOC (Corp-to-Corp)</span><b>${ed?`<input class="in h" data-f="load" data-k="CTOC" value="${S.load.CTOC}" aria-label="CTOC load %">`:S.load.CTOC}%</b></div></section>
   <section class="card pad"><h2 style="font-size:16px;margin-bottom:6px">Weeks &amp; pay</h2><div class="kv"><span>Week ends on</span><b>Sunday</b></div><div class="kv"><span>W2 payroll</span><b>Bi-weekly, Friday</b></div><div class="kv"><span>Pay calendar</span><b>${Object.keys(D.cal).length} weeks loaded</b></div><div class="kv"><span>Commission run date</span><b>${fd(D.runDate)}</b></div></section>
   <section class="card pad"><h2 style="font-size:16px;margin-bottom:6px">Discounts (not applied yet)</h2><div class="kv"><span>Tenure 6 / 12 / 18 months</span><b>1% · 2% · 5%</b></div><div class="kv"><span>Volume $500k / $1M / $5M</span><b>1% · 2% · 5%</b></div></section></div>
   ${ed?'<div class="note">Changes recalculate every screen right away. In the real system each change would ask “from which date?” and be logged.</div>':''}
-  <section class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2 style="font-size:17px">Commission grid · by profit per hour (used)</h2>${g(D.grid.gp,D.grid.gpTiers,'$')}<h2 style="font-size:17px">Commission grid · by gross margin % (in workbook, not used)</h2>${g(D.grid.gpm,D.grid.gpmTiers,'')}</section>`;
+  <section class="card pad" style="display:flex;flex-direction:column;gap:10px">${(()=>{const R=CM(),u=R.grid==='gp';return `<h2 style="font-size:17px">Commission grid · by profit per hour (${u?'used':'not used'})</h2>${g(R.gp,R.gpTiers,'$')}<h2 style="font-size:17px">Commission grid · by gross margin % (${u?'not used':'used'})</h2>${g(R.gpm,R.gpmTiers,'')}<div class="sm-t">Change these on the Commission page with “Manage commission”.</div>`})()}</section>`;
 };
 
 V.reports=()=>{
@@ -1074,7 +1115,15 @@ const ACT={
   'cl-del':()=>{if(!U.clDelC){U.clDelC=true;render();return}S.xc=S.xc.filter(x=>x.name!==U.clEd);delete S.clients[U.clEd];save();U.clEd=null;U.clDelC=false;render()},
   'cm-view':d=>{U.cmSel=d.v;U.cmDr=true;U.cmF='all';render();window.scrollTo(0,0)},'cm-close':()=>{U.cmDr=false;render();window.scrollTo(0,0)},'cm-f':d=>{U.cmF=d.v;render()},
   'cm-step':d=>{const r=role();let dt=commission(U.mon);if(['rec','lead'].includes(r.kind))dt=dt.filter(x=>x.R===r.p);const ns=dt.map(x=>x.R),i=ns.indexOf(U.cmSel)+(+d.d);if(ns[i]){U.cmSel=ns[i];U.cmF='all';render()}},
-  'comm-lock':()=>{S.locks['comm|'+U.mon]=true;save();render()},
+  'comm-lock':()=>{S.locks['comm|'+U.mon]={at:ASOF,by:role().label,rules:JSON.parse(JSON.stringify(CM()))};save();render()},
+  'cm-unlock':()=>{delete S.locks['comm|'+U.mon];save();render()},
+  'cm-manage':()=>{U.cmEd=true;U.cmDraft=null;U.cmErr=null;render()},
+  'cm-mclose':()=>{U.cmEd=false;U.cmDraft=null;U.cmErr=null;render()},
+  'cm-reset':()=>{const R=JSON.parse(JSON.stringify(D.grid));U.cmDraft=Object.assign(R,{grid:'gp',unit:'mult',minWk:6});U.cmErr=null;render()},
+  'cm-adj-save':()=>{const a=document.getElementById('cma-amt').value.trim(),n=document.getElementById('cma-note').value.trim(),v=parseFloat(a);
+    if(a===''||!isFinite(v)){U.cmAdjErr='Enter an amount, like 250 or -100';render();return}if(!n){U.cmAdjErr='Add a reason so others know why';render();return}
+    U.cmAdjErr=null;S.cadj=S.cadj||{};S.cadj[U.mon+'|'+U.cmSel]={amt:v,note:n,by:role().label,at:ASOF};save();render()},
+  'cm-adj-clear':()=>{if(S.cadj)delete S.cadj[U.mon+'|'+U.cmSel];U.cmAdjErr=null;save();render()},
   'rep':d=>{U.rep=d.v;render()},
   'us-new':()=>{U.usEd='new';U.usErr=null;U.usDraft=null;render();const i=document.getElementById('usf-name');if(i)i.focus()},
   'us-edit':d=>{U.usEd=d.v;U.usErr=null;U.usDraft=null;render()},
@@ -1086,8 +1135,8 @@ const ACT={
 };
 if(typeof document!=='undefined'){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(f){e.preventDefault();f(b.dataset,b)}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(U.invDr||U.fteDr||U.pyDr||U.cmDr||U.clEd||U.usEd)){U.usEd=null;U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();return}if((e.key==='Enter'||e.key===' ')&&e.target.matches('.li[data-act]')){e.preventDefault();ACT[e.target.dataset.act](e.target.dataset)}});
-document.addEventListener('submit',e=>{if(e.target.id==='candf'){e.preventDefault();saveCand();return}if(e.target.id==='clf'){e.preventDefault();saveClient();return}if(e.target.id==='usf'){e.preventDefault();saveUser();return}if(e.target.id!=='payf')return;e.preventDefault();const t=S.ts[U.arSel];if(!t)return;const amt=parseFloat(document.getElementById('pay-amt').value);if(!(amt>=0))return;t.rcvd={date:document.getElementById('pay-date').value||ASOF,amt,note:document.getElementById('pay-note').value};save();U.arSel=null;render()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(U.invDr||U.fteDr||U.pyDr||U.cmDr||U.clEd||U.usEd||U.cmEd)){U.cmEd=false;U.cmDraft=null;U.usEd=null;U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();return}if((e.key==='Enter'||e.key===' ')&&e.target.matches('.li[data-act]')){e.preventDefault();ACT[e.target.dataset.act](e.target.dataset)}});
+document.addEventListener('submit',e=>{if(e.target.id==='candf'){e.preventDefault();saveCand();return}if(e.target.id==='clf'){e.preventDefault();saveClient();return}if(e.target.id==='usf'){e.preventDefault();saveUser();return}if(e.target.id==='cmf'){e.preventDefault();saveCm();return}if(e.target.id!=='payf')return;e.preventDefault();const t=S.ts[U.arSel];if(!t)return;const amt=parseFloat(document.getElementById('pay-amt').value);if(!(amt>=0))return;t.rcvd={date:document.getElementById('pay-date').value||ASOF,amt,note:document.getElementById('pay-note').value};save();U.arSel=null;render()});
 document.addEventListener('input',e=>{const el=e.target,f=el.dataset.f;
   if(f==='clq'){U.clQ=el.value;render();const q=document.getElementById('clq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   if(f==='tsq'){U.tsQ=el.value;U.tsSel=null;render();const q=document.getElementById('tsq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
@@ -1119,14 +1168,14 @@ document.addEventListener('change',e=>{const el=e.target,f=el.dataset.f;
   if(f==='pyfrom'){U.pyFrom=el.value;render()}
   if(f==='pyto'){U.pyTo=el.value;render()}
   if(f==='mon'){U.mon=el.value;render()}
-  if(f==='unit'){S.unit=el.value;save();render()}
+  if(f==='cmgrid'){U.cmDraft=cmRead();render()}
   if(f==='adp'){S.adp[U.payDate+'|'+el.dataset.n]=el.value===''?null:parseFloat(el.value);save();render()}
   if(f==='chk'){const a=S.check[U.payDate]=S.check[U.payDate]||[];a[+el.dataset.i]=el.checked;save();render()}
   if(f==='load'){const v=parseFloat(el.value);if(v>=0){S.load[el.dataset.k]=v;save()}render()}
   if(f==='cl'){const v=parseFloat(el.value);if(v>=0){const n=el.dataset.n,k=el.dataset.k;S.clients[n]=Object.assign({},S.clients[n]||{},{[k]:k==='msp'?v/100:v});save()}render()}
   if(f==='h')render();
 });
-window.addEventListener('hashchange',()=>{U.usEd=null;U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();window.scrollTo(0,0)});
+window.addEventListener('hashchange',()=>{U.cmEd=false;U.cmDraft=null;U.usEd=null;U.invDr=false;U.fteDr=false;U.pyDr=false;U.cmDr=false;U.clEd=null;render();window.scrollTo(0,0)});
 seedHistory();save();render();
 }
 </script>
