@@ -134,6 +134,10 @@ tr.click:hover td{background:var(--soft)}
 .li:hover{background:var(--soft)}
 .li.sel{background:var(--accent-soft)}
 .note{border-left:3px solid var(--warn);background:var(--warn-bg);color:var(--ink);padding:10px 12px;border-radius:0 8px 8px 0;font-size:13px}
+.fx{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--soft);border-radius:6px;padding:8px 10px;line-height:1.6;overflow-wrap:anywhere}
+.cxs{display:flex;flex-direction:column;gap:14px}.cx{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px 22px}.cx>div{min-width:0;display:flex;flex-direction:column;gap:8px}
+.cx h2{font-size:16px;grid-column:1/-1}.cx .lab{font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+@media (max-width:760px){.cx{grid-template-columns:minmax(0,1fr)}}
 .math{font-size:13px;display:flex;flex-direction:column;gap:3px}
 .math div{display:flex;justify-content:space-between;gap:10px}
 .math .tot{border-top:1px solid var(--line);padding-top:4px;font-weight:600}
@@ -309,23 +313,23 @@ const BASE_ROLES=[
  {id:'monu',label:'Monu · Recruiter',kind:'rec',p:'Monu'},
  {id:'ritika',label:'Ritika · Recruiter',kind:'rec',p:'Ritika'},
  {id:'exec',label:'Executive (read-only)',kind:'exec'}];
-const ALLNAV=['home','timesheets','candidates','invoices','fte','payroll','payhist','commission','clients','settings','reports','users'];
-const NAVLBL={home:'Home',timesheets:'Timesheets',candidates:'Candidates',invoices:'Invoices & payments',fte:'Direct hires (FTE)',payroll:'Payroll',payhist:'Pay history',commission:'Commission',clients:'Clients',settings:'Settings',reports:'Reports',users:'Users & roles'};
+const ALLNAV=['home','timesheets','candidates','invoices','fte','payroll','payhist','commission','clients','settings','reports','calc','users'];
+const NAVLBL={home:'Home',timesheets:'Timesheets',candidates:'Candidates',invoices:'Invoices & payments',fte:'Direct hires (FTE)',payroll:'Payroll',payhist:'Pay history',commission:'Commission',clients:'Clients',settings:'Settings',reports:'Reports',calc:'How it\'s calculated',users:'Users & roles'};
 const PERMS={
  admin:  {nav:ALLNAV,bill:1,pay:1,margin:1,editCands:1,editHours:1,editPay:1,editClients:1,approve:1,scope:'All placements'},
- finance:{nav:['home','timesheets','candidates','invoices','fte','payroll','payhist','commission','clients','settings','reports'],bill:1,pay:1,margin:1,editCands:1,editHours:1,editPay:1,editClients:1,approve:1,scope:'All placements'},
- payroll:{nav:['home','timesheets','candidates','payroll','payhist','reports'],bill:0,pay:1,margin:0,editHours:1,scope:'All placements · pay only'},
- dm:     {nav:['home','timesheets','candidates','invoices','fte','commission','reports'],bill:1,pay:1,margin:1,editCands:1,scope:'Placements under this DM'},
- sd:     {nav:['home','timesheets','candidates','invoices','fte','commission','reports'],bill:1,pay:1,margin:1,editCands:1,scope:'Placements under this director'},
- lead:   {nav:['home','timesheets','candidates','invoices','commission'],bill:1,pay:1,margin:1,editCands:1,editHours:1,scope:'Only placements they are named on'},
- rec:    {nav:['home','candidates','commission'],bill:0,pay:0,margin:0,scope:'Only their placements · no rates'},
+ finance:{nav:['home','timesheets','candidates','invoices','fte','payroll','payhist','commission','clients','settings','reports','calc'],bill:1,pay:1,margin:1,editCands:1,editHours:1,editPay:1,editClients:1,approve:1,scope:'All placements'},
+ payroll:{nav:['home','timesheets','candidates','payroll','payhist','reports','calc'],bill:0,pay:1,margin:0,editHours:1,scope:'All placements · pay only'},
+ dm:     {nav:['home','timesheets','candidates','invoices','fte','commission','reports','calc'],bill:1,pay:1,margin:1,editCands:1,scope:'Placements under this DM'},
+ sd:     {nav:['home','timesheets','candidates','invoices','fte','commission','reports','calc'],bill:1,pay:1,margin:1,editCands:1,scope:'Placements under this director'},
+ lead:   {nav:['home','timesheets','candidates','invoices','commission','calc'],bill:1,pay:1,margin:1,editCands:1,editHours:1,scope:'Only placements they are named on'},
+ rec:    {nav:['home','candidates','commission','calc'],bill:0,pay:0,margin:0,scope:'Only their placements · no rates'},
  exec:   {nav:ALLNAV,bill:1,pay:1,margin:1,scope:'Everything · view only'}};
 const KINDS=[['admin','Admin'],['finance','Finance team'],['payroll','Payroll team'],['dm','DM (Delivery Manager)'],['sd','Sales Director'],['lead','Lead (Sales / Delivery)'],['rec','Recruiter'],['exec','Executive (read-only)']];
 const KLBL=Object.fromEntries(KINDS);const SCOPED=['dm','sd','lead','rec'];
 const SEEK=[['bill','Bill rates'],['pay','Pay rates'],['margin','Margin & gross profit']];
 const EDK=[['editCands','Candidates'],['editHours','Hours'],['editPay','Payments'],['editClients','Clients'],['approve','Approve commission']];
 const PKEYS=[...SEEK,...EDK].map(x=>x[0]);
-function permOf(u){const b=PERMS[u.kind];if(!u.perm)return b;const o=Object.assign({},b,u.perm);o.nav=ALLNAV.filter(n=>n==='home'||(u.perm.nav||b.nav).includes(n));return o}
+function permOf(u){const b=PERMS[u.kind];if(!u.perm)return b;const o=Object.assign({},b,u.perm);o.nav=ALLNAV.filter(n=>n==='home'||(u.perm.nav||b.nav).includes(n)||(n==='calc'&&!u.perm.calcSet&&b.nav.includes('calc')));return o}
 function permDiff(kind,o){const b=PERMS[kind];const same=ALLNAV.every(n=>b.nav.includes(n)===o.nav.includes(n))&&PKEYS.every(k=>!!b[k]===!!o[k]);return same?null:o}
 function ensureUsers(){if(!S.users)S.users=BASE_ROLES.map(r=>({id:r.id,label:r.label,name:r.p||r.label,email:'',kind:r.kind,p:r.p||'',active:true,added:null,base:1}))}
 function uLabel(u){if(u.label)return u.label;const k=KLBL[u.kind].replace(/ \(.*\)/,'');return u.name+' · '+k}
@@ -961,6 +965,71 @@ function cmValid(R){const e={},inc=a=>a.every((v,i)=>v>=0&&isFinite(v)&&(!i||v>a
   return e}
 function saveCm(){const R=cmRead(),e=cmValid(R);if(Object.keys(e).length){U.cmErr=e;U.cmDraft=R;render();return}
   S.cm={grid:R.grid,minWk:R.minWk,spread:R.spread,gpTiers:R.gpTiers,gp:R.gp,gpmTiers:R.gpmTiers,gpm:R.gpm};S.unit=R.unit;save();U.cmEd=false;U.cmDraft=null;U.cmErr=null;render()}
+V.calc=()=>{
+  const pm=PM(),RU=CM(),money=pm.bill||pm.pay;
+  const keys=Object.keys(S.ts).filter(k=>{const [n]=k.split('|');const c=S.cands.find(x=>x.name===n);return c&&inScope(c)&&hasHours(n,k.split('|')[1])}).sort((a,b)=>b.split('|')[1].localeCompare(a.split('|')[1])||a.localeCompare(b));
+  if(!keys.length)return head('How it\'s calculated','')+'<div class="empty">No timesheets you can see yet.</div>';
+  const names=[...new Set(keys.map(k=>k.split('|')[0]))].sort();
+  if(!U.cxN||!names.includes(U.cxN))U.cxN=names[0];
+  const wks=keys.filter(k=>k.startsWith(U.cxN+'|')).map(k=>k.split('|')[1]);if(!U.cxW||!wks.includes(U.cxW))U.cxW=wks[0];
+  const c=S.cands.find(x=>x.name===U.cxN),wk=U.cxW,t=S.ts[c.name+'|'+wk],r=calc(c,t),cl=client(c.client),h=t.h,[st,ot,hol,on,cb,dt,pto]=h,L=r.L;
+  const ln=(a,b,cls='')=>`<div class="${cls}"><span>${a}</span><span>${b}</span></div>`;
+  const box=(n,title,formula,rules,ex,exl)=>`<section class="card pad cx"><h2>${n} · ${title}</h2><div><span class="lab">Formula</span><div class="fx">${formula}</div>${rules?`<span class="lab">Settings used</span><div class="math">${rules}</div>`:''}</div><div><span class="lab">Example · ${exl||esc(c.name)+', week ending '+fd(wk)}</span><div class="math">${ex}</div></div></section>`;
+  const types=[['ST','st',c.bST,st],['OT','ot',c.bOT,ot],['Holiday','hol',c.bHol,hol],['On-call','on',c.bOn,on],['Call-back','cb',c.bCb,cb]];
+  const mspTxt=`${pc2(cl.msp)}${cl.mspD?' and '+$m(cl.mspD)+'/h':''}`;
+  let out=head('How it\'s calculated','Every formula the app uses, in the order the numbers flow, with the live settings and a worked example. Pick any timesheet to see it with real numbers.',
+   `<label class="fld"><span>Placement</span><select class="in" data-f="cxn">${names.map(n=>`<option ${n===U.cxN?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label class="fld"><span>Week ending</span><select class="in" data-f="cxw">${wks.map(w=>`<option value="${w}" ${w===wk?'selected':''}>${fd(w)}</option>`).join('')}</select></label>`)+
+  `<section class="card pad"><div class="terms"><div><span>Client</span><b>${esc(c.client)}</b><small>MSP ${mspTxt} · pays in ${cl.terms} days</small></div><div><span>Pay type</span><b>${esc(c.pt)}</b><small>employer cost ${(L*100).toFixed(0)}%</small></div><div><span>Hours this week</span><b>${$n(st)} ST</b><small>${[ot&&$n(ot)+' OT',hol&&$n(hol)+' holiday',on&&$n(on)+' on-call',cb&&$n(cb)+' call-back',dt&&$n(dt)+' DT',pto&&$n(pto)+' PTO'].filter(Boolean).join(' · ')||'no other hours'}</small></div><div><span>Recruiter</span><b>${esc(c.rec||'—')}</b><small>DM ${esc(c.dm||'—')}</small></div></div></section><div class="cxs">`;
+  let i=0;const N=()=>++i;
+  if(pm.bill){
+    out+=box(N(),'Net bill rate (after MSP)','Net rate = Bill rate × (1 − MSP %) − MSP $ per hour<br>Worked out for each hour type: ST, OT, holiday, on-call, call-back',
+      ln('MSP fee',pc2(cl.msp))+ln('MSP $ per hour',cl.mspD?$m(cl.mspD):'—')+ln('Set in','Clients'),
+      types.filter(x=>x[2]).map(([l,k,b])=>ln(`${l}: ${$m(b)} × (1 − ${pc2(cl.msp)})${cl.mspD?' − '+$m(cl.mspD):''}`,r4(r.n[k]))).join(''));
+    out+=box(N(),'Bill to the client','Bill = Σ hours × net rate for each hour type<br>DT hours are billed at the holiday rate (as in the workbook)<br>Invoice due = week ending + client\'s payment terms',
+      ln('Payment terms',cl.terms+' days')+ln('Expenses','recorded, not added to the bill'),
+      types.filter(x=>x[3]).map(([l,k,,hh])=>ln(`${$n(hh)} h ${l} × ${r4(r.n[k])}`,$m(hh*r.n[k]))).join('')+(dt?ln(`${$n(dt)} h DT × ${r4(r.n.hol)} (holiday rate)`,$m(dt*r.n.hol)):'')+ln('Bill',$m(r.bill),'tot')+ln(`Due: ${fd(wk)} + ${r.terms} days`,fd(addD(wk,r.terms))));
+  }
+  if(pm.pay){
+    out+=box(N(),'Pay to the contractor','Pay = ST h × pay rate + OT h × OT pay + holiday h × holiday pay + on-call h × on-call pay + call-back h × call-back pay + ST h × hourly stipend<br>Pay date: CTOC = end of next month + client terms · weekly W2 = week ending + 12 days · other W2 = pay calendar (bi-weekly Friday)',
+      ln('Pay type',c.pt+(c.weekly?' · weekly':''))+ln('Hourly stipend',c.stip?$m(c.stip):'—'),
+      ln(`${$n(st)} h × ${$m(c.pST)}`,$m(r.payST))+(ot?ln(`${$n(ot)} h OT × ${$m(c.pOT)}`,$m(ot*c.pOT)):'')+(hol?ln(`${$n(hol)} h holiday × ${$m(c.pHol)}`,$m(hol*c.pHol)):'')+(on?ln(`${$n(on)} h on-call × ${$m(c.pOn)}`,$m(on*c.pOn)):'')+(cb?ln(`${$n(cb)} h call-back × ${$m(c.pCb)}`,$m(cb*c.pCb)):'')+(c.stip?ln(`${$n(st)} h × ${$m(c.stip)} stipend`,$m(r.stipAmt)):'')+ln('Pay',$m(r.pay),'tot')+ln('Pay date',fd(payDate(c,wk,r.terms))));
+    out+=box(N(),'Employer cost on top of pay','Loaded pay rate = Pay rate × (1 + employer cost %) + hourly stipend',
+      ln('W2',S.load.W2+'%')+ln('CTOC',S.load.CTOC+'%')+ln('Set in','Settings'),
+      ln(`${$m(c.pST)} × (1 + ${(L*100).toFixed(0)}%)${c.stip?' + '+$m(c.stip):''}`,r4(c.pST*(1+L)+c.stip),'tot'));
+  }
+  if(pm.margin){
+    out+=box(N(),'Gross profit','Gross profit = ST bill (net) − ST pay × (1 + employer cost %)<br>Gross margin % = Gross profit ÷ ST bill (net)<br>Only ST hours count, and the stipend is left out (as in the workbook)',
+      '',ln('ST bill (net)',$m(r.billST))+ln(`− ${$m(r.payST)} × (1 + ${(L*100).toFixed(0)}%)`,'− '+$m(r.payST*(1+L)))+ln('Gross profit',$m(r.gp),'tot')+ln('Gross margin',pct(r.gpm)));
+    out+=box(N(),'Profit after sales commission','Adjusted gross profit = Gross profit × (1 − client\'s sales commission %)',
+      ln('Sales commission',(cl.scomm||0)+'%')+ln('Set in','Clients'),
+      ln(`${$m(r.gp)} × (1 − ${cl.scomm||0}%)`,$m(r.adj),'tot'));
+  }
+  const showComm=pm.nav.includes('commission');
+  if(showComm||pm.margin){
+    out+=box(N(),'Profit per hour (recruiter run rate)','Run rate = (Net ST rate − (Pay rate × (1 + employer cost %) + stipend)) × (1 − sales commission %)',
+      '',(pm.bill&&pm.pay?ln(`(${r4(r.n.st)} − ${r4(c.pST*(1+L)+c.stip)}) × (1 − ${cl.scomm||0}%)`,r4(r.rr),'tot'):ln('Run rate',r4(r.rr),'tot')));
+    out+=box(N(),'Weekly spread','Weekly spread = Run rate × (ST hours − PTO hours)',
+      '',ln(`${r4(r.rr)} × (${$n(st)} − ${$n(pto)})`,$m(r.spread),'tot'));
+  }
+  if(showComm){
+    const mon=wk.slice(0,7),RM=CM(mon),cm=commission(mon).find(x=>x.R===c.rec),li=cm&&cm.lines.find(l=>l.c.name===c.name),k=cm?cm.wks.indexOf(wk):-1,w=li&&k>=0?li.weeks[k]:null;
+    out+=box(N(),'Commission','Band = recruiter\'s total weekly spread across all placements<br>Tier = placement\'s '+gridName(RM)+'<br>Weekly commission = Weekly spread × grid rate (band × tier)'+(RM.unit==='pct'?' ÷ 100':'')+'<br>Earned only once the placement has worked '+RM.minWk+'+ weeks<br>Month commission = Σ weekly commission + adjustment',
+      ln('Tier by',gridName(RM))+ln('Rate means',RM.unit==='pct'?'percent':'multiplier')+ln('Qualifies after',RM.minWk+' weeks')+ln('Bands from',RM.spread.map(v=>$m(v,0)).join(' · '))+ln('Set in','Commission › Manage commission')+(S.locks['comm|'+mon]&&S.locks['comm|'+mon].rules?ln('Note',monLabel(mon)+' is approved; it keeps its own rules'):''),
+      w?ln(`${esc(c.rec)}'s total spread, week of ${fds(wk)}`,$m(cm.weekTot[k]))+ln('Band',bandLab(cm.band[k],RM))+ln('Tier',tierLab(li.tier,RM)+(RM.grid==='gpm'?` (GPM ${pct(li.gpm)})`:` (run rate ${r4(li.rr)})`))+ln('Rate from grid','× '+w.rate+(RM.unit==='pct'?'%':''))+ln('Qualified',li.elig?`yes · ${li.tenure} weeks`:`no · ${li.tenure} weeks so far`)+ln(`${$m(w.spread)} × ${w.rate}${RM.unit==='pct'?'%':''}${li.elig?'':' (not qualified)'}`,$m(w.comm),'tot')+
+        ln(`${esc(c.rec)} · ${monLabel(mon)} grid commission`,$m(cm.gcomm))+(cm.adj?ln('Adjustment: '+esc(cm.adj.note||''),$m(+cm.adj.amt)):'')+ln(`${esc(c.rec)} · ${monLabel(mon)} commission`,$m(cm.comm),'tot')
+       :ln('No commission line for this week','—'));
+  }
+  if(pm.bill){
+    const rc=t.rcvd,got=rc?(rc.amt??r.bill):0;
+    out+=box(N(),'Payments and what\'s still owed','Still owed = Bill − amount received<br>Late = not fully paid after the due date',
+      '',ln('Billed',$m(r.bill))+ln('Received'+(rc&&rc.date?' '+fd(rc.date):''),$m(got))+ln('Still owed',$m(Math.max(0,r.bill-got)),'tot'));
+    if(pm.nav.includes('fte')){const f=D.fte.filter(fteScope)[0];if(f){const gross=f.salary*f.pct;
+      out+=box(N(),'Direct-hire (FTE) fee','Fee = Salary × fee % × (1 − MSP %)<br>Due = invoice date + 90 days<br>Guarantee ends = start date + 60 days',
+        '',ln(`${$m(f.salary)} × ${pc2(f.pct)}`,$m(gross))+ln(`− MSP ${pc2(f.msp)}`,'− '+$m(gross*f.msp))+ln('Fee',$m(gross-gross*f.msp),'tot')+ln('Due',fd(addD(f.inv,90)))+ln('Guarantee ends',fd(addD(f.start,60))),esc(f.name)+', '+esc(f.client))}}
+  }
+  out+='</div><div class="note">Numbers above are worked out live from the same code every other screen uses, so changing a client, setting or commission rule changes this page too.</div>';
+  return out;
+};
 V.settings=()=>{
   const pm=PM(),ed=pm.editClients;
   const g=(arr,tiers,lab)=>`<div class="tbl"><table><thead><tr><th>Weekly spread</th>${tiers.map((t,i)=>`<th class="n">${lab}${t}${i<tiers.length-1?'–'+(+(tiers[i+1]-0.01).toFixed(2)):'+'}</th>`).join('')}</tr></thead><tbody>${arr.map((r,i)=>`<tr><td>Band ${i+1} · from ${$m(CM().spread[i],0)}</td>${r.map(v=>`<td class="n">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -1051,7 +1120,7 @@ function usDrawer(){
 function usRead(){const g=k=>document.getElementById('usf-'+k),v=k=>g(k)?g(k).value.trim():'';const isNew=U.usEd==='new',old=isNew?{}:S.users.find(x=>x.id===U.usEd)||{};
   const nm=v('name').replace(/\s+/g,' ');return {name:nm,pw:g('pw')?g('pw').value:'',kind:g('kind')&&!g('kind').disabled?g('kind').value:(old.kind||'rec'),p:nm,active:g('active')?g('active').checked:(isNew?true:old.active!==false),perm:usPerm(old)}}
 function usPerm(old){const g=k=>document.getElementById('usf-'+k);if(!g('pm-bill'))return old.perm;if(g('pm-bill').disabled&&g('nav-timesheets').disabled)return old.perm;
-  const kind=g('kind')&&!g('kind').disabled?g('kind').value:old.kind;const o={nav:ALLNAV.filter(n=>n==='home'||g('nav-'+n).checked)};PKEYS.forEach(k=>o[k]=g('pm-'+k).checked?1:0);
+  const kind=g('kind')&&!g('kind').disabled?g('kind').value:old.kind;const o={nav:ALLNAV.filter(n=>n==='home'||g('nav-'+n).checked),calcSet:1};PKEYS.forEach(k=>o[k]=g('pm-'+k).checked?1:0);
   if(!(o.bill&&o.pay))o.margin=0;return permDiff(kind,o)||undefined}
 function saveUser(){
   const isNew=U.usEd==='new',o=usRead(),e={};
@@ -1169,6 +1238,8 @@ document.addEventListener('change',e=>{const el=e.target,f=el.dataset.f;
   if(f==='pyto'){U.pyTo=el.value;render()}
   if(f==='mon'){U.mon=el.value;render()}
   if(f==='cmgrid'){U.cmDraft=cmRead();render()}
+  if(f==='cxn'){U.cxN=el.value;U.cxW=null;render()}
+  if(f==='cxw'){U.cxW=el.value;render()}
   if(f==='adp'){S.adp[U.payDate+'|'+el.dataset.n]=el.value===''?null:parseFloat(el.value);save();render()}
   if(f==='chk'){const a=S.check[U.payDate]=S.check[U.payDate]||[];a[+el.dataset.i]=el.checked;save();render()}
   if(f==='load'){const v=parseFloat(el.value);if(v>=0){S.load[el.dataset.k]=v;save()}render()}
