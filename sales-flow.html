@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Sales Commission Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column; each part = flow strip + rules table + try-it calculator; ends with a worked year and open questions */
+:root{
+  --bg:#f6f7f5;--panel:#ffffff;--ink:#17211d;--mut:#5b6863;--line:#dde3df;
+  --acc:#0f6b57;--acc-soft:#e3f1ec;
+  --a1:#0f6b57;--a1s:#e3f1ec;   /* part 1 MSP */
+  --a2:#7a4bb3;--a2s:#efe8f8;   /* part 2 perm */
+  --a3:#b5620f;--a3s:#fbefe2;   /* part 3 quarterly */
+  --warn:#8a5a00;--warn-s:#fff4d6;
+  --f-disp:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --f-body:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --f-num:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111614;--panel:#19201d;--ink:#e6ece9;--mut:#9aa8a2;--line:#2c3632;
+  --acc:#4fc3a1;--acc-soft:#173029;
+  --a1:#4fc3a1;--a1s:#173029;--a2:#b897e6;--a2s:#2a2236;--a3:#e6a45c;--a3s:#33261a;
+  --warn:#f0c560;--warn-s:#332a14;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614;--panel:#19201d;--ink:#e6ece9;--mut:#9aa8a2;--line:#2c3632;
+  --acc:#4fc3a1;--acc-soft:#173029;
+  --a1:#4fc3a1;--a1s:#173029;--a2:#b897e6;--a2s:#2a2236;--a3:#e6a45c;--a3s:#33261a;
+  --warn:#f0c560;--warn-s:#332a14;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--f-disp);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:2.1rem;letter-spacing:-.01em}
+h2{font-size:1.45rem}
+h3{font-size:1.05rem}
+p{margin:0;max-width:68ch}
+.mut{color:var(--mut)}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:600;color:var(--mut)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+section{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px}
+.note{background:var(--warn-s);color:var(--warn);border-radius:8px;padding:12px 14px;font-size:.9rem}
+.note b{font-weight:600}
+
+/* three-ways overview */
+.ways{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.way{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.way .tag{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--c)}
+.way dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:.88rem}
+.way dt{color:var(--mut)}.way dd{margin:0}
+@media (max-width:720px){.ways{grid-template-columns:1fr}}
+
+/* big flow */
+.flow{overflow-x:auto}
+.lane{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:stretch;padding:12px 0;border-bottom:1px dashed var(--line)}
+.lane:last-child{border-bottom:0}
+.lane-h{font-family:var(--f-disp);font-weight:600;color:var(--c);font-size:.95rem;display:flex;align-items:center}
+.steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.step{background:var(--cs);color:var(--ink);border:1px solid color-mix(in srgb,var(--c) 35%,transparent);border-radius:8px;padding:8px 10px;font-size:.85rem;line-height:1.35;max-width:190px}
+.step b{display:block;color:var(--c);font-size:.8rem;font-weight:600}
+.step.pay{background:var(--c);color:var(--panel);border-color:var(--c)}
+.step.pay b{color:var(--panel);opacity:.85}
+.arr{color:var(--mut);font-size:1rem}
+@media (max-width:640px){.lane{grid-template-columns:1fr}}
+
+/* part headers */
+.part-h{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:99px;background:var(--cs);color:var(--c)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:600}
+td.n,th.n{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+tr.hit td{background:var(--cs)}
+.tbl{overflow-x:auto}
+
+/* calculators */
+.calc{display:flex;flex-direction:column;gap:12px}
+.calc h3{color:var(--c)}
+.fields{display:flex;flex-wrap:wrap;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--mut);min-width:0}
+.fld input{font:inherit;font-family:var(--f-num);font-size:.95rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:130px}
+.fld input:focus-visible{outline:2px solid var(--c);outline-offset:1px}
+.out{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.row{display:flex;justify-content:space-between;gap:12px}
+.row .v{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
+.row.tot{font-weight:600;font-size:1rem;color:var(--c)}
+
+/* ladder */
+.ladder{display:flex;gap:4px;flex-wrap:wrap}
+.rung{flex:1 1 0;min-width:110px;border-radius:8px;padding:10px;background:var(--bg);border:1px solid var(--line);font-size:.82rem;display:flex;flex-direction:column;gap:2px}
+.rung.on{background:var(--cs);border-color:var(--c)}
+.rung .k{font-family:var(--f-disp);font-weight:600;color:var(--c)}
+
+/* year timeline */
+.tl{display:flex;flex-direction:column}
+.ev{display:grid;grid-template-columns:90px 14px minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev .d{font-family:var(--f-num);font-size:.82rem;color:var(--mut);padding-top:2px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--c);margin-top:5px}
+.ev .amt{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:600;color:var(--c);white-space:nowrap}
+.ev .amt.zero{color:var(--mut);font-weight:500}
+@media (max-width:560px){.ev{grid-template-columns:14px minmax(0,1fr) auto}.ev .d{grid-column:2;order:-1;padding:0}.dot{grid-row:1/3}}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:12px;font-family:var(--f-disp);font-size:1.15rem}
+
+/* story */
+.cast{display:flex;flex-wrap:wrap;gap:8px}
+.who{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:.84rem}
+.who b{font-weight:600}
+.story{display:flex;flex-direction:column;gap:0;counter-reset:s}
+.st{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;position:relative;padding-bottom:18px}
+.st:last-child{padding-bottom:0}
+.st::before{counter-increment:s;content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cs,var(--acc-soft));color:var(--c,var(--acc));font-family:var(--f-disp);font-weight:700;display:grid;place-items:center;font-size:.9rem;border:1px solid var(--c,var(--acc))}
+.st::after{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--line)}
+.st:last-child::after{display:none}
+.st .body{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.st .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline;justify-content:space-between}
+.st .when{font-family:var(--f-num);font-size:.8rem;color:var(--mut)}
+.st h3{font-size:1rem}
+.st .app{font-size:.86rem;background:var(--bg);border-radius:6px;padding:8px 10px;color:var(--mut)}
+.st .app b{color:var(--ink);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.74rem;font-weight:600;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut);background:var(--panel);white-space:nowrap}
+.chip.wait{color:var(--warn);background:var(--warn-s);border-color:transparent}
+.chip.due{color:var(--a3);background:var(--a3s);border-color:transparent}
+.chip.paid{color:var(--a1);background:var(--a1s);border-color:transparent}
+.chip.cnt{color:var(--a2);background:var(--a2s);border-color:transparent}
+.stmt{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:.88rem}
+.ifs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ifs .card{padding:14px 16px;display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+@media (max-width:640px){.ifs{grid-template-columns:1fr}}
+ol.q{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px}
+ol.q li{max-width:72ch}
+.p1{--c:var(--a1);--cs:var(--a1s)}
+.p2{--c:var(--a2);--cs:var(--a2s)}
+.p3{--c:var(--a3);--cs:var(--a3s)}
+@media (prefers-reduced-motion:no-preference){.rung,tr td{transition:background .2s}}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:10px">
+  <span class="eyebrow">Generis Tek · Staffing Billing Desk</span>
+  <h1>Sales commission, start to finish</h1>
+  <p class="mut">How a sales person earns money under Kekin's <b>Sample 1</b> plan. There are three separate ways to earn. Each one has its own trigger, its own amount and its own pay date. All amounts are fixed rupee payouts, not a percentage of profit.</p>
+  <div class="note"><b>Draft.</b> Where the sample is unclear, this page uses a reading marked <b>assumed</b>. Those points are listed at the end as questions for Kekin.</div>
+</header>
+
+<section>
+  <h2>The three ways to earn</h2>
+  <div class="ways">
+    <div class="way p1"><span class="tag">Part 1 · New MSP account</span><h3>Win a VMS / MSP program</h3>
+      <dl><dt>Trigger</dt><dd>Generis Tek is added as a supplier on a new MSP program</dd><dt>Amount</dt><dd>₹40,000 – ₹1,30,000 by account size</dd><dt>Paid</dt><dd>6 weeks after the first worker starts</dd><dt>Frequency</dt><dd>Once per account</dd></dl></div>
+    <div class="way p2"><span class="tag">Part 2 · New perm client</span><h3>Sign a direct-hire client</h3>
+      <dl><dt>Trigger</dt><dd>Hires made for that client in its first 12 months</dd><dt>Amount</dt><dd>₹40,000 rising to ₹1,30,000 total</dd><dt>Paid</dt><dd>In steps, at hire 1, 6, 11 and 16</dd><dt>Frequency</dt><dd>Up to 4 payments per client</dd></dl></div>
+    <div class="way p3"><span class="tag">Part 3 · Quarterly bonus</span><h3>Hit hiring targets</h3>
+      <dl><dt>Trigger</dt><dd>Hires in a quarter, per business line</dd><dt>Amount</dt><dd>₹9,000 – ₹48,000, then +₹13,000 each</dd><dt>Paid</dt><dd>After the quarter closes</dd><dt>Frequency</dt><dd>Every quarter, for each of 3 lines</dd></dl></div>
+  </div>
+</section>
+
+<section>
+  <h2>The whole flow on one page</h2>
+  <div class="card flow">
+    <div class="lane p1"><div class="lane-h">Part 1 · MSP account</div><div class="steps">
+      <div class="step"><b>1 · Win</b>Sales person gets Generis Tek onto a new MSP program</div><span class="arr">→</span>
+      <div class="step"><b>2 · Size it</b>Fair share = program spend ÷ number of suppliers</div><span class="arr">→</span>
+      <div class="step"><b>3 · Class</b>A, B, C or D from the fair share</div><span class="arr">→</span>
+      <div class="step"><b>4 · Wait</b>First worker starts, then 6 weeks pass</div><span class="arr">→</span>
+      <div class="step pay"><b>5 · Pay</b>₹40k / 70k / 1L / 1.3L once</div></div></div>
+    <div class="lane p2"><div class="lane-h">Part 2 · Perm client</div><div class="steps">
+      <div class="step"><b>1 · Sign</b>New direct-hire client goes live; 12-month clock starts</div><span class="arr">→</span>
+      <div class="step"><b>2 · Hire</b>Each perm placement is counted</div><span class="arr">→</span>
+      <div class="step"><b>3 · Check</b>Warranty period met and client has paid</div><span class="arr">→</span>
+      <div class="step"><b>4 · Step up</b>Hire 1 → D, 6 → C, 11 → B, 16 → A</div><span class="arr">→</span>
+      <div class="step pay"><b>5 · Pay</b>₹40k, then +₹30k at each step</div></div></div>
+    <div class="lane p3"><div class="lane-h">Part 3 · Quarterly</div><div class="steps">
+      <div class="step"><b>1 · Tag</b>Each hire belongs to WPH, Focus One or Medical Solutions</div><span class="arr">→</span>
+      <div class="step"><b>2 · Count</b>Hires per line in the quarter</div><span class="arr">→</span>
+      <div class="step"><b>3 · Tier</b>Base, Target, Stretch, Super stretch</div><span class="arr">→</span>
+      <div class="step pay"><b>4 · Pay</b>Bonus per line, added together</div></div></div>
+  </div>
+  <p class="mut">At month end, the app adds up everything that became payable for each sales person and puts it on one statement.</p>
+</section>
+
+<!-- STORY -->
+<section id="story">
+  <h2>User story: one placement, start to payout</h2>
+  <p>Follow one candidate from the day the account is won to the day the sales person is paid. All names and figures are made up.</p>
+  <div class="cast">
+    <span class="who"><b>Neha</b> · sales person</span>
+    <span class="who"><b>Arjun</b> · recruiter</span>
+    <span class="who"><b>Ravi</b> · delivery manager</span>
+    <span class="who"><b>Finance</b> · approves and pays</span>
+    <span class="who"><b>Maria Lopez</b> · the candidate</span>
+  </div>
+  <div class="card" style="padding:12px 16px"><p style="font-size:.92rem"><b>The story in one line:</b> Neha wins a new MSP program. Arjun places Maria on it. Maria works 6 weeks. Neha earns <b>₹70,000</b> for the account plus <b>₹9,000</b> quarterly bonus. Finance pays her <b>₹79,000</b> in April.</p></div>
+
+  <div class="story">
+    <div class="st p1"><div class="body">
+      <div class="top"><h3>Neha wins a new MSP program</h3><span class="when">5 Jan</span></div>
+      <p>A pharma client adds Generis Tek as a supplier on its SAP Fieldglass program. The program spends <b>$40M</b> a year across <b>20 suppliers</b>.</p>
+      <div class="app"><b>In the app:</b> Finance adds the account on Clients, enters spend and supplier count, and picks Neha as sales person. The app works out fair share $2M → <b>Class C, ₹70,000</b>.</div>
+      <div class="chips"><span class="chip wait">₹70,000 · Waiting for first start</span></div>
+    </div></div>
+
+    <div class="st"><div class="body">
+      <div class="top"><h3>A job opens and Arjun submits Maria</h3><span class="when">12 Jan</span></div>
+      <p>A Clinical Data Analyst requirement appears in Fieldglass. Arjun finds Maria and submits her. The client interviews and selects her at a <b>$80/hr</b> bill rate. Maria will be paid <b>$60/hr</b>.</p>
+      <div class="app"><b>In the app:</b> nothing is paid yet. Submissions and interviews happen in the VMS portal.</div>
+    </div></div>
+
+    <div class="st p3"><div class="body">
+      <div class="top"><h3>Maria starts work</h3><span class="when">Mon 2 Feb</span></div>
+      <p>This is the <b>first worker</b> on Neha's new account, so the 6-week clock for her account payout starts today.</p>
+      <div class="app"><b>In the app:</b> Ravi adds Maria on Workers with client, bill rate, pay rate, start date, recruiter Arjun, sales person Neha and business line <b>WPH</b>. The app sets the account payout date to <b>16 Mar</b> (start + 6 weeks) and counts Maria as WPH hire 1 for Q1.</div>
+      <div class="chips"><span class="chip wait">₹70,000 · Waiting until 16 Mar</span><span class="chip cnt">Q1 WPH hires: 1</span></div>
+    </div></div>
+
+    <div class="st"><div class="body">
+      <div class="top"><h3>Every week Maria works</h3><span class="when">Feb – Mar</span></div>
+      <p>Maria submits 40 hours a week in Fieldglass and the client approves them.</p>
+      <div class="app"><b>In the app:</b> each Monday the Client portals page logs in, filters approved timesheets and saves a <b>screenshot</b> as proof. Ravi enters the hours on Timesheets. The app creates the invoice ($3,200 a week), runs payroll ($2,400) and records <b>$800 gross profit</b>. Arjun's recruiter commission runs on that profit separately, every month.</div>
+    </div></div>
+
+    <div class="st p1"><div class="body">
+      <div class="top"><h3>Six weeks pass</h3><span class="when">16 Mar</span></div>
+      <p>Maria is still working, so the condition "first start plus 6 weeks" is met.</p>
+      <div class="app"><b>In the app:</b> the payout changes from Waiting to <b>Due</b> by itself and goes on Neha's March statement.</div>
+      <div class="chips"><span class="chip due">₹70,000 · Due</span></div>
+    </div></div>
+
+    <div class="st p3"><div class="body">
+      <div class="top"><h3>The quarter closes</h3><span class="when">31 Mar</span></div>
+      <p>Neha's accounts made 1 WPH hire in Q1 (Maria), 0 Focus One and 0 Medical Solutions.</p>
+      <div class="app"><b>In the app:</b> 1 hire = <b>Base tier, ₹9,000</b>. Added to the March statement.</div>
+      <div class="chips"><span class="chip due">₹9,000 · Due</span></div>
+    </div></div>
+
+    <div class="st"><div class="body">
+      <div class="top"><h3>Neha gets her statement</h3><span class="when">5 Apr</span></div>
+      <p>The app emails each sales person their statement on the 5th. Neha logs in and sees only her own commission.</p>
+      <div class="stmt">
+        <div class="row"><span>MSP account · Class C · 6 weeks met 16 Mar</span><span class="v num">₹70,000</span></div>
+        <div class="row"><span>Q1 bonus · WPH 1 hire · Base</span><span class="v num">₹9,000</span></div>
+        <div class="row tot p1"><span>March total</span><span class="v num">₹79,000</span></div>
+      </div>
+    </div></div>
+
+    <div class="st"><div class="body">
+      <div class="top"><h3>Finance checks and approves</h3><span class="when">7 Apr</span></div>
+      <p>Finance opens Sales commission, checks each line against its proof: account details, Maria's start date, and the Q1 hire count. Then approves.</p>
+      <div class="app"><b>In the app:</b> status <b>Approved</b>. Finance exports the month's sales commission to Excel for the India payroll team.</div>
+      <div class="chips"><span class="chip due">₹79,000 · Approved</span></div>
+    </div></div>
+
+    <div class="st p1"><div class="body">
+      <div class="top"><h3>Neha is paid</h3><span class="when">10 Apr</span></div>
+      <p>The money is paid in rupees with Neha's April salary or by bank transfer. The transfer happens outside the app.</p>
+      <div class="app"><b>In the app:</b> Finance marks both lines <b>Paid</b> with the date and bank reference. Neha's statement shows them as paid, and they can't be paid twice.</div>
+      <div class="chips"><span class="chip paid">₹79,000 · Paid 10 Apr</span></div>
+    </div></div>
+  </div>
+
+  <h3 style="margin-top:8px">What if something goes differently?</h3>
+  <div class="ifs">
+    <div class="card"><b>Maria leaves in week 4</b><span class="mut">The account payout stays Waiting. The clock restarts when the next worker starts on the account <span class="num">(assumed, to confirm)</span>.</span></div>
+    <div class="card"><b>Maria were a perm hire instead</b><span class="mut">Part 2 applies. ₹40,000 becomes due only after the warranty period ends and the client has paid the fee.</span></div>
+    <div class="card"><b>Two more WPH starts in Q1</b><span class="mut">3 hires = Stretch tier, so the Q1 bonus is ₹33,000 instead of ₹9,000.</span></div>
+    <div class="card"><b>Finance finds a mistake</b><span class="mut">Finance rejects the line with a reason. Ravi fixes the worker details and the line comes back as Due.</span></div>
+  </div>
+</section>
+
+<!-- PART 1 -->
+<section class="p1">
+  <div class="part-h"><span class="pill">Part 1</span><h2>New MSP account payout</h2></div>
+  <p>An MSP (managed service provider) program is a large client's staffing program run through a VMS portal, with many suppliers competing for jobs. A program is only worth what Generis Tek can realistically win, so the plan sizes it by <b>fair share</b>.</p>
+  <div class="card"><p class="num" style="font-size:.95rem">Fair share = (total program spend − payroll, LI, HI) ÷ number of suppliers</p></div>
+  <div class="two">
+    <div class="card tbl"><table id="t1"><thead><tr><th>Class</th><th>Fair share</th><th class="n">Payout</th></tr></thead><tbody>
+      <tr data-c="A"><td>A</td><td>$10M and above</td><td class="n">₹1,30,000</td></tr>
+      <tr data-c="B"><td>B</td><td>$5M – $10M</td><td class="n">₹1,00,000</td></tr>
+      <tr data-c="C"><td>C</td><td>$2M – $5M</td><td class="n">₹70,000</td></tr>
+      <tr data-c="D"><td>D</td><td>$1M – $2M</td><td class="n">₹40,000</td></tr>
+      <tr data-c="-"><td>None</td><td>Below $1M <span class="mut">(assumed)</span></td><td class="n">₹0</td></tr>
+    </tbody></table><p class="mut" style="font-size:.82rem;margin-top:8px">Ranges between the listed amounts are assumed.</p></div>
+    <div class="card calc"><h3>Try it</h3>
+      <div class="fields">
+        <label class="fld" for="c1s">Program spend ($M)<input id="c1s" type="number" min="0" step="1" value="40"></label>
+        <label class="fld" for="c1n">Number of suppliers<input id="c1n" type="number" min="1" step="1" value="20"></label>
+        <label class="fld" for="c1d">First worker starts<input id="c1d" type="date" value="2026-02-02"></label>
+      </div>
+      <div class="out">
+        <div class="row"><span>Fair share</span><span class="v" id="o1f"></span></div>
+        <div class="row"><span>Class</span><span class="v" id="o1c"></span></div>
+        <div class="row"><span>Payable on</span><span class="v" id="o1d"></span></div>
+        <div class="row tot"><span>Payout</span><span class="v" id="o1p"></span></div>
+      </div></div>
+  </div>
+</section>
+
+<!-- PART 2 -->
+<section class="p2">
+  <div class="part-h"><span class="pill">Part 2</span><h2>New permanent-placement client</h2></div>
+  <p>Every new direct-hire client <b>starts as Class D</b>. As more people are hired for that client in the <b>first 12 months after it goes live</b>, it moves up a class. Each step up pays only the <b>difference</b>, so the total never exceeds ₹1,30,000 per client.</p>
+  <p>A hire counts only once its <b>warranty period</b> is over (the candidate stayed) and the <b>client has paid</b> Generis Tek's fee.</p>
+  <div class="card calc">
+    <h3>Try it</h3>
+    <div class="fields"><label class="fld" for="c2h">Hires in first 12 months<input id="c2h" type="number" min="0" max="40" step="1" value="7"></label></div>
+    <div class="ladder" id="lad"></div>
+    <div class="out" id="o2"></div>
+  </div>
+</section>
+
+<!-- PART 3 -->
+<section class="p3">
+  <div class="part-h"><span class="pill">Part 3</span><h2>Quarterly hire bonus</h2></div>
+  <p>Every quarter, hires are counted separately for each of three business lines: <b>WPH</b>, <b>Focus One</b> and <b>Medical Solutions</b>. Each line pays its own bonus and the three are added together.</p>
+  <div class="two">
+    <div class="card tbl"><table id="t3"><thead><tr><th>Tier</th><th class="n">Hires</th><th class="n">Bonus</th></tr></thead><tbody>
+      <tr data-h="1"><td>Base</td><td class="n">1</td><td class="n">₹9,000</td></tr>
+      <tr data-h="2"><td>Target</td><td class="n">2</td><td class="n">₹20,000</td></tr>
+      <tr data-h="3"><td>Stretch</td><td class="n">3</td><td class="n">₹33,000</td></tr>
+      <tr data-h="4"><td>Super stretch</td><td class="n">4</td><td class="n">₹48,000</td></tr>
+      <tr data-h="5"><td>Each extra hire</td><td class="n">5+</td><td class="n">+₹13,000</td></tr>
+    </tbody></table><p class="mut" style="font-size:.82rem;margin-top:8px">Assumed: each tier amount is the total for that many hires, not added on top of the tier below.</p></div>
+    <div class="card calc"><h3>Try it · one quarter</h3>
+      <div class="fields">
+        <label class="fld" for="c3a">WPH hires<input id="c3a" type="number" min="0" step="1" value="3"></label>
+        <label class="fld" for="c3b">Focus One hires<input id="c3b" type="number" min="0" step="1" value="0"></label>
+        <label class="fld" for="c3c">Medical Solutions hires<input id="c3c" type="number" min="0" step="1" value="1"></label>
+      </div>
+      <div class="out" id="o3"></div></div>
+  </div>
+</section>
+
+<!-- YEAR -->
+<section>
+  <h2>One year for one sales person</h2>
+  <p class="mut">A made-up example that uses all three parts. Assumed: 90-day warranty, client pays within the warranty period, and payouts go on the next monthly statement.</p>
+  <div class="card"><div class="tl" id="tl"></div>
+    <div class="total"><span>Total earned in the year</span><span class="num" id="tot"></span></div></div>
+</section>
+
+<!-- APP -->
+<section>
+  <h2>What the app will do</h2>
+  <div class="card tbl"><table><thead><tr><th>Who</th><th>What they do</th></tr></thead><tbody>
+    <tr><td>Admin / Finance</td><td>Enter each new MSP account's spend and supplier count once. The app sets the class.</td></tr>
+    <tr><td>Recruiters / DMs</td><td>Enter placements as now, with one extra tag: business line (WPH, Focus One, Medical Solutions).</td></tr>
+    <tr><td>App, automatically</td><td>Tracks the 6-week clock, warranty dates, client payments, the 12-month window and quarterly counts. Flags each payout as <b>Waiting</b>, <b>Due</b> or <b>Paid</b>.</td></tr>
+    <tr><td>Sales person</td><td>Sees only their own monthly statement: what was earned, why, and what is still waiting.</td></tr>
+    <tr><td>Finance</td><td>Marks payouts as paid and exports the month's sales commission to Excel.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section>
+  <h2>Questions for Kekin</h2>
+  <div class="card"><ol class="q">
+    <li><b>Who gets paid?</b> Only the sales person who won the account, or is it split, e.g. with a Sales Director?</li>
+    <li><b>What are WPH, Focus One and Medical Solutions?</b> Divisions, client groups or teams? Every hire needs to be tagged with one.</li>
+    <li><b>Quarterly tiers:</b> is ₹20,000 for 2 hires the total, or on top of the ₹9,000? Is 5 hires ₹48,000 + ₹13,000 = ₹61,000?</li>
+    <li><b>What counts as a "hire"?</b> A contract start, a perm placement, or both, for Part 3?</li>
+    <li><b>How long is the warranty period</b> for perm placements?</li>
+    <li><b>Fair share bands:</b> is $3M a Class C? What happens below $1M?</li>
+    <li><b>Fair share data:</b> who supplies the program spend and supplier count, and is it entered once or updated?</li>
+    <li><b>Rupees only?</b> Are payouts fixed in INR regardless of the dollar rate?</li>
+    <li><b>Leaving:</b> if the sales person leaves, are pending step-ups still paid?</li>
+    <li><b>Sample 2:</b> which roles does it cover, and does it replace or add to Sample 1?</li>
+  </ol></div>
+</section>
+
+</div>
+
+<script>
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const $=id=>document.getElementById(id);
+const fmtD=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+
+/* Part 1 */
+function cls(fs){return fs>=10?['A',130000]:fs>=5?['B',100000]:fs>=2?['C',70000]:fs>=1?['D',40000]:['-',0]}
+function p1(){
+  const s=+$('c1s').value||0,n=Math.max(1,+$('c1n').value||1),fs=s/n,[c,amt]=cls(fs);
+  $('o1f').textContent='$'+fs.toFixed(2)+'M';
+  $('o1c').textContent=c==='-'?'None':'Class '+c;
+  const v=$('c1d').value;let t='—';if(v){const d=new Date(v+'T00:00:00');d.setDate(d.getDate()+42);t=fmtD(d)}
+  $('o1d').textContent=t;$('o1p').textContent=inr(amt);
+  document.querySelectorAll('#t1 tbody tr').forEach(r=>r.classList.toggle('hit',r.dataset.c===c));
+}
+['c1s','c1n','c1d'].forEach(i=>$(i).addEventListener('input',p1));
+
+/* Part 2 */
+const STEPS=[[1,'D',40000,40000],[6,'C',70000,30000],[11,'B',100000,30000],[16,'A',130000,30000]];
+function p2(){
+  const h=Math.max(0,+$('c2h').value||0);
+  $('lad').innerHTML=STEPS.map(([at,c,tot,add],i)=>{const nx=STEPS[i+1]?STEPS[i+1][0]-1:'+';return `<div class="rung ${h>=at?'on':''}"><span class="k">Class ${c}</span><span>${at}${nx==='+'?'+':'–'+nx} hires</span><span class="num">${inr(tot)} total</span></div>`}).join('');
+  const got=STEPS.filter(s=>h>=s[0]);
+  let html=got.map(([at,c,tot,add])=>`<div class="row"><span>Hire ${at} · ${at===1?'first payout':'step up to Class '+c}</span><span class="v">+${inr(add)}</span></div>`).join('');
+  if(!got.length)html='<div class="row"><span class="mut">No hires yet, nothing payable</span><span class="v">₹0</span></div>';
+  const nxt=STEPS.find(s=>h<s[0]);
+  if(nxt)html+=`<div class="row mut"><span>Next: ${nxt[0]-h} more hire${nxt[0]-h>1?'s':''} reaches Class ${nxt[1]}</span><span class="v">+${inr(nxt[3])}</span></div>`;
+  html+=`<div class="row tot"><span>Total for this client</span><span class="v">${inr(got.length?got.at(-1)[2]:0)}</span></div>`;
+  $('o2').innerHTML=html;
+}
+$('c2h').addEventListener('input',p2);
+
+/* Part 3 */
+const qb=n=>n<=0?0:n===1?9000:n===2?20000:n===3?33000:48000+(n-4)*13000;
+const tierName=n=>n<=0?'—':n===1?'Base':n===2?'Target':n===3?'Stretch':n===4?'Super stretch':'Super stretch + '+(n-4);
+function p3(){
+  const L=[['WPH','c3a'],['Focus One','c3b'],['Medical Solutions','c3c']];let tot=0;
+  $('o3').innerHTML=L.map(([nm,id])=>{const n=Math.max(0,+$(id).value||0),b=qb(n);tot+=b;return `<div class="row"><span>${nm} · ${n} hire${n===1?'':'s'} · ${tierName(n)}</span><span class="v">${inr(b)}</span></div>`}).join('')+`<div class="row tot"><span>Quarter bonus</span><span class="v">${inr(tot)}</span></div>`;
+}
+['c3a','c3b','c3c'].forEach(i=>$(i).addEventListener('input',p3));
+
+/* Year */
+const EV=[
+ ['10 Jan','p1','Wins a new MSP program: $40M spend, 20 suppliers → fair share $2M → Class C.',0],
+ ['2 Feb','p1','First worker starts on that program. The 6-week clock starts.',0],
+ ['1 Feb','p2','New direct-hire client goes live. Its 12-month window runs to 31 Jan next year.',0],
+ ['16 Mar','p1','6 weeks done. MSP account payout is due.',70000],
+ ['3 Mar','p2','First perm hire for the client. Warranty runs 90 days.',0],
+ ['1 Jun','p2','Hire 1 passes warranty and the client has paid. Class D payout.',40000],
+ ['30 Jun','p3','Q2 closes: WPH 3 hires (Stretch ₹33,000) + Medical Solutions 1 hire (Base ₹9,000).',42000],
+ ['30 Sep','p3','Q3 closes: Focus One 5 hires (Super stretch ₹48,000 + 1 extra ₹13,000).',61000],
+ ['14 Nov','p2','Hire 6 for the client passes warranty. Client steps up to Class C, difference paid.',30000],
+ ['31 Dec','p3','Q4 closes: WPH 1 hire (Base).',9000]
+];
+const ORDER=['10 Jan','1 Feb','2 Feb','3 Mar','16 Mar','1 Jun','30 Jun','30 Sep','14 Nov','31 Dec'];
+EV.sort((a,b)=>ORDER.indexOf(a[0])-ORDER.indexOf(b[0]));
+$('tl').innerHTML=EV.map(([d,p,t,a])=>`<div class="ev ${p}"><span class="d">${d}</span><span class="dot"></span><span>${t}</span><span class="amt ${a?'':'zero'}">${a?'+'+inr(a):'—'}</span></div>`).join('');
+$('tot').textContent=inr(EV.reduce((s,e)=>s+e[3],0));
+
+p1();p2();p3();
+</script>
+
+</body>
+</html>

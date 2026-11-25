@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Placement Journey</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column. A numbered story grouped into stages (before start, every week, every month, every quarter, the end); each step names who acts, which app page, and money/status chips */
+:root{
+  --bg:#f5f7f6;--panel:#ffffff;--ink:#16201c;--mut:#5a6762;--line:#dce3df;
+  --acc:#0f6b57;--acc-s:#e2f1eb;
+  --blue:#2b5fb4;--blue-s:#e6eefb;
+  --vio:#7449ad;--vio-s:#efe8f8;
+  --amb:#a85b0c;--amb-s:#fbefe1;
+  --warn:#8a5a00;--warn-s:#fff4d6;
+  --f-disp:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --f-body:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --f-num:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101614;--panel:#18201d;--ink:#e5ece9;--mut:#9aa8a2;--line:#2b3531;
+  --acc:#4fc3a1;--acc-s:#16302a;--blue:#82a9ec;--blue-s:#1b2638;--vio:#b897e6;--vio-s:#2a2236;--amb:#e6a45c;--amb-s:#33261a;
+  --warn:#f0c560;--warn-s:#332a14;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614;--panel:#18201d;--ink:#e5ece9;--mut:#9aa8a2;--line:#2b3531;
+  --acc:#4fc3a1;--acc-s:#16302a;--blue:#82a9ec;--blue-s:#1b2638;--vio:#b897e6;--vio-s:#2a2236;--amb:#e6a45c;--amb-s:#33261a;
+  --warn:#f0c560;--warn-s:#332a14;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-disp);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:2.1rem;letter-spacing:-.01em}h2{font-size:1.4rem}h3{font-size:1rem}
+p{margin:0;max-width:70ch}
+.mut{color:var(--mut)}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:600;color:var(--mut)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+section{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.note{background:var(--warn-s);color:var(--warn);border-radius:8px;padding:12px 14px;font-size:.9rem}
+a{color:var(--acc)}
+
+.cast{display:flex;flex-wrap:wrap;gap:8px}
+.who{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:.84rem}
+.who b{font-weight:600}
+
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.fact{background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.fact span{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.fact b{font-weight:600;font-size:.95rem}
+@media (max-width:720px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* stage nav */
+.stages{display:flex;flex-wrap:wrap;gap:6px}
+.stages a{text-decoration:none;font-size:.82rem;font-weight:600;padding:5px 11px;border-radius:99px;background:var(--cs);color:var(--c)}
+.s1{--c:var(--blue);--cs:var(--blue-s)}
+.s2{--c:var(--acc);--cs:var(--acc-s)}
+.s3{--c:var(--vio);--cs:var(--vio-s)}
+.s4{--c:var(--amb);--cs:var(--amb-s)}
+.s5{--c:var(--mut);--cs:var(--bg)}
+
+.stage-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-top:6px;border-top:3px solid var(--c)}
+.stage-h .k{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+
+.story{display:flex;flex-direction:column}
+.st{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;position:relative;padding-bottom:16px}
+.st:last-child{padding-bottom:0}
+.st .n{width:30px;height:30px;border-radius:50%;background:var(--cs);color:var(--c);border:1px solid var(--c);font-family:var(--f-disp);font-weight:700;display:grid;place-items:center;font-size:.85rem}
+.st::after{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--line)}
+.st:last-child::after{display:none}
+.body{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.top{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;justify-content:space-between}
+.when{font-family:var(--f-num);font-size:.8rem;color:var(--mut)}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:.74rem;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut);background:var(--bg);white-space:nowrap}
+.tag.pg{border-color:transparent;background:var(--cs);color:var(--c);font-weight:600}
+.app{font-size:.86rem;background:var(--bg);border-radius:6px;padding:8px 10px;color:var(--mut)}
+.app b{color:var(--ink);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.74rem;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap;font-family:var(--f-num)}
+.chip.in{color:var(--acc);background:var(--acc-s)}
+.chip.out{color:var(--blue);background:var(--blue-s)}
+.chip.wait{color:var(--warn);background:var(--warn-s)}
+.chip.inr{color:var(--vio);background:var(--vio-s)}
+
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:600}
+td.r,th.r{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.sub td{color:var(--mut)}
+tr.tot td{font-weight:600;border-top:2px solid var(--ink)}
+.tbl{overflow-x:auto}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;font-size:.78rem;text-align:center}
+.day{background:var(--bg);border-radius:6px;padding:6px 2px;display:flex;flex-direction:column;gap:2px}
+.day b{font-family:var(--f-num);font-size:.9rem}
+.day .ot{color:var(--amb);font-family:var(--f-num)}
+.day.on{background:var(--acc-s)}
+
+.ifs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ifs .card{padding:14px 16px;display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+@media (max-width:640px){.ifs{grid-template-columns:1fr}}
+.map td:first-child{font-weight:600;white-space:nowrap}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:10px">
+  <span class="eyebrow">Generis Tek · Staffing Billing Desk</span>
+  <h1>Maria's placement, end to end</h1>
+  <p class="mut">One worker followed through every part of the system. Her story starts when the client account is won. It covers adding her and her weekly hours, the client's invoice and payment, her pay through ADP, per diem, overtime, the Workers' Comp report, and both commissions. It ends when her assignment finishes. Each step names who does it and which page of the app it happens on.</p>
+  <div class="note"><b>Example only.</b> Names, client, rates and dates are made up to show the flow. Sales commission follows Kekin's Sample 1. The MSP fee, payment terms, per diem rate and warranty period are sample values.</div>
+</header>
+
+<section>
+  <div class="cast">
+    <span class="who"><b>Maria Lopez</b> · travel ICU nurse</span>
+    <span class="who"><b>Neha</b> · sales person</span>
+    <span class="who"><b>Arjun</b> · recruiter</span>
+    <span class="who"><b>Ravi</b> · delivery manager</span>
+    <span class="who"><b>Kiran</b> · sales manager</span>
+    <span class="who"><b>Finance team</b></span>
+    <span class="who"><b>Payroll team</b></span>
+  </div>
+  <div class="facts">
+    <div class="fact"><span>Client</span><b>Hospital in Los Angeles, CA</b></div>
+    <div class="fact"><span>Portal</span><b>ShiftWise (Phase 1)</b></div>
+    <div class="fact"><span>Bill rate</span><b class="num">$90 · OT $135</b></div>
+    <div class="fact"><span>Pay rate (W2)</span><b class="num">$40 · OT $60</b></div>
+    <div class="fact"><span>Per diem</span><b class="num">$171/day tax-free</b></div>
+    <div class="fact"><span>MSP fee</span><b class="num">3% of the invoice</b></div>
+    <div class="fact"><span>Client pays</span><b>Net 45 days</b></div>
+    <div class="fact"><span>Assignment</span><b class="num">2 Feb – 3 May</b></div>
+  </div>
+  <nav class="stages" aria-label="Stages">
+    <a class="s1" href="#before">1 · Before she starts</a>
+    <a class="s2" href="#weekly">2 · Every week</a>
+    <a class="s3" href="#monthly">3 · Every month</a>
+    <a class="s4" href="#quarterly">4 · Every quarter</a>
+    <a class="s4" href="#managers">Manager bonus</a>
+    <a class="s5" href="#end">5 · Assignment ends</a>
+  </nav>
+</section>
+
+<!-- STAGE 1 -->
+<section id="before" class="s1">
+  <div class="stage-h"><span class="k">Stage 1</span><h2>Before she starts</h2></div>
+  <div class="story">
+    <div class="st s1"><span class="n">1</span><div class="body">
+      <div class="top"><h3>Neha wins a new MSP program</h3><span class="when">5 Jan</span></div>
+      <div class="meta"><span class="tag pg">Clients</span><span class="tag">Finance</span></div>
+      <p>A Los Angeles hospital system adds Generis Tek as a supplier on its ShiftWise program. The program spends $40M a year across 20 suppliers.</p>
+      <div class="app"><b>In the app:</b> Finance adds the client with its MSP fee (3%), payment terms (Net 45), state (CA) and sales person (Neha). They also enter spend and supplier count: fair share $2M, which is <b>Class C</b> for sales commission.</div>
+      <div class="chips"><span class="chip wait">Neha ₹70,000 · waiting for first start</span></div>
+    </div></div>
+
+    <div class="st s1"><span class="n">2</span><div class="body">
+      <div class="top"><h3>Portal login is saved</h3><span class="when">6 Jan</span></div>
+      <div class="meta"><span class="tag pg">Client portals (VMS)</span><span class="tag">Admin</span></div>
+      <p>The ShiftWise login is saved against the account and the account is marked active, so the weekly screenshot can run.</p>
+    </div></div>
+
+    <div class="st s1"><span class="n">3</span><div class="body">
+      <div class="top"><h3>Arjun places Maria</h3><span class="when">12 – 23 Jan</span></div>
+      <div class="meta"><span class="tag">In ShiftWise, not our app</span><span class="tag">Arjun</span></div>
+      <p>An ICU nurse job opens in ShiftWise. Arjun submits Maria, who lives in Phoenix, AZ. The hospital interviews her and confirms a 13-week assignment starting 2 Feb.</p>
+    </div></div>
+
+    <div class="st s1"><span class="n">4</span><div class="body">
+      <div class="top"><h3>Ravi adds Maria to the system</h3><span class="when">26 Jan</span></div>
+      <div class="meta"><span class="tag pg">Candidates</span><span class="tag pg">Per diem</span><span class="tag">Ravi</span></div>
+      <p>This is the one time all her details are typed in. Everything after this is worked out from them.</p>
+      <div class="app"><b>In the app:</b> Candidates → Add. Ravi enters name, client, job, start date, W2, bill rates ($90 / OT $135), pay rates ($40 / OT $60), work state <b>CA</b>, recruiter <b>Arjun</b>, sales person <b>Neha</b> and business line <b>Medical Solutions</b>. On Per diem he enters her home city (Phoenix) and work city (Los Angeles). Because she travels over 50 miles, the app allows per diem up to the GSA rate, <b>$171/day</b>.</div>
+      <div class="card" style="padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:.88rem">
+        <b>How her per diem works</b>
+        <span><b>1 · Is she allowed it?</b> Yes, because she keeps her home in Phoenix and works in LA, more than 50 miles away. Someone who lives in LA gets no per diem.</span>
+        <span><b>2 · How much?</b> The government (GSA) sets a daily rate for each city: hotel <span class="num">$107</span> + meals <span class="num">$64</span> = <span class="num">$171/day</span> for LA (sample figures). Generis Tek can pay up to this amount without tax.</span>
+        <span><b>3 · Which days?</b> Every day she is on assignment, weekends included: <span class="num">7 × $171 = $1,197</span> a week.</span>
+        <span><b>4 · How is it paid?</b> With her weekly pay through ADP, as a separate tax-free line (code PDM). No tax is taken from it.</span>
+        <span><b>5 · What else?</b> The client doesn't see it as a separate line, because it comes out of the bill rate. It is left out of the Workers' Comp report. If she goes home for a week, that week has no per diem.</span>
+        <span><b>6 · Travel days?</b> On the day she travels to or from the assignment, per diem depends on how many hours she also worked that day:</span>
+        <div class="tbl"><table style="font-size:.84rem">
+          <thead><tr><th>Hours worked on travel day</th><th class="r">Per diem</th><th class="r">At $171</th><th>Type</th></tr></thead>
+          <tbody>
+            <tr><td>0 – 1.99</td><td class="r">25%</td><td class="r">$42.75</td><td>Partial travel day</td></tr>
+            <tr><td>2 – 3.99</td><td class="r">50%</td><td class="r">$85.50</td><td>Partial travel day</td></tr>
+            <tr><td>4 – 7.99</td><td class="r">?</td><td class="r">?</td><td><i>Not in Kekin's table, to confirm</i></td></tr>
+            <tr><td>8 or more</td><td class="r">100%</td><td class="r">$171.00</td><td>Full travel day</td></tr>
+          </tbody></table></div>
+      </div>
+    </div></div>
+
+    <div class="st s1"><span class="n">5</span><div class="body">
+      <div class="top"><h3>She is set up in ADP</h3><span class="when">28 Jan</span></div>
+      <div class="meta"><span class="tag pg">ADP export</span><span class="tag">Payroll team</span></div>
+      <p>The payroll team creates Maria in ADP with her tax forms and bank details. The app gives her an ADP file number so every payroll file matches her automatically.</p>
+    </div></div>
+
+    <div class="st s1"><span class="n">6</span><div class="body">
+      <div class="top"><h3>Travel day: Maria flies to LA</h3><span class="when">Sun 1 Feb</span></div>
+      <div class="meta"><span class="tag pg">Monthly timesheet</span><span class="tag pg">Per diem</span><span class="tag">Arjun</span></div>
+      <p>She flies from Phoenix to LA and doesn't work that day (0 hours).</p>
+      <div class="app"><b>In the app:</b> Arjun marks 1 Feb as a <b>travel day</b> with 0 hours. The app applies the travel-day rule: 0 – 1.99 hours = <b>25%</b> of $171 = <b>$42.75</b>. It is paid with her first ADP pay. From Mon 2 Feb she gets the full $171 a day.</div>
+      <div class="chips"><span class="chip out">Per diem $42.75 · partial travel day</span></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- STAGE 2 -->
+<section id="weekly" class="s2">
+  <div class="stage-h"><span class="k">Stage 2</span><h2>Every week she works</h2><span class="mut">Shown for her first week, ending Sun 8 Feb</span></div>
+  <div class="story">
+    <div class="st s2"><span class="n">7</span><div class="body">
+      <div class="top"><h3>Maria works, and the system screenshots her approved hours</h3><span class="when">2 – 9 Feb</span></div>
+      <div class="meta"><span class="tag pg">Client portals (VMS)</span><span class="tag">Automatic</span></div>
+      <p>She works three 12-hour shifts (Mon, Wed, Fri) and submits them in ShiftWise. The hospital approves them.</p>
+      <div class="app"><b>In the app:</b> on Monday 9 Feb the system logs in to ShiftWise, filters for this client, week ending 8 Feb and status Approved, and saves a <b>screenshot</b>. The screenshot shows Maria's approved hours for each day.</div>
+      <div class="chips"><span class="chip wait">Sales: 6-week clock started</span><span class="chip wait">Q1 Medical Solutions hires: 1</span></div>
+    </div></div>
+
+    <div class="st s2"><span class="n">8</span><div class="body">
+      <div class="top"><h3>Arjun enters the hours from the screenshot</h3><span class="when">Mon 9 Feb</span></div>
+      <div class="meta"><span class="tag pg">Client portals (VMS)</span><span class="tag pg">Monthly timesheet</span><span class="tag">Arjun (recruiter)</span></div>
+      <p>Arjun opens the saved screenshot and types Maria's hours for each day, along with the ShiftWise timesheet number. The app does the overtime maths. <b>California pays overtime after 8 hours in a day</b>, so each 12-hour shift is 8 regular and 4 overtime, even though the week is under 40 hours.</p>
+      <div class="days">
+        <div class="day on"><span>Mon</span><b>12</b><span class="ot">8+4</span></div>
+        <div class="day"><span>Tue</span><b>–</b></div>
+        <div class="day on"><span>Wed</span><b>12</b><span class="ot">8+4</span></div>
+        <div class="day"><span>Thu</span><b>–</b></div>
+        <div class="day on"><span>Fri</span><b>12</b><span class="ot">8+4</span></div>
+        <div class="day"><span>Sat</span><b>–</b></div>
+        <div class="day"><span>Sun</span><b>–</b></div>
+      </div>
+      <div class="app"><b>In the app:</b> the week fills in as <b>24 regular + 12 overtime</b>. In Texas the same week would be 36 regular and no overtime. The screenshot stays attached to the week as proof. If Arjun hasn't entered the hours by Monday, the <b>missing timesheets</b> email reminds him.</div>
+    </div></div>
+
+    <div class="st s2"><span class="n">9</span><div class="body">
+      <div class="top"><h3>Ravi checks and approves, and the invoice is created</h3><span class="when">Mon 9 Feb</span></div>
+      <div class="meta"><span class="tag pg">Timesheets</span><span class="tag pg">Invoices &amp; payments</span><span class="tag">Ravi · Finance</span></div>
+      <div class="app"><b>In the app:</b> Ravi compares Arjun's entry with the screenshot and approves the week. The app creates the invoice line, <b>$3,780</b>, with its due date (8 Feb + 45 days = <b>25 Mar</b>).</div>
+      <div class="chips"><span class="chip out">Invoice $3,780 · open</span></div>
+    </div></div>
+
+    <div class="st s2"><span class="n">10</span><div class="body">
+      <div class="top"><h3>Maria is paid through ADP</h3><span class="when">18 – 20 Feb</span></div>
+      <div class="meta"><span class="tag pg">Payroll</span><span class="tag pg">ADP export</span><span class="tag">Payroll team</span></div>
+      <div class="app"><b>In the app:</b> Payroll shows her $1,680 wages and $1,197 per diem for pay date <b>Fri 20 Feb</b>. Two days before, the <b>payroll file ready</b> email goes out. The payroll team downloads the ADP file and uploads it to ADP, and ADP pays Maria and handles her taxes.</div>
+      <div class="chips"><span class="chip out">Paid to Maria $2,877</span></div>
+    </div></div>
+
+    <div class="st s2"><span class="n">11</span><div class="body">
+      <div class="top"><h3>The client pays the invoice</h3><span class="when">20 Mar</span></div>
+      <div class="meta"><span class="tag pg">Invoices &amp; payments</span><span class="tag">Finance</span></div>
+      <div class="app"><b>In the app:</b> the MSP sends payment of <b>$3,666.60</b>, which is the invoice less its 3% fee. Finance records it and the line shows <b>Paid</b>. If it had not arrived by 25 Mar, the Monday <b>overdue invoices</b> email would list it.</div>
+      <div class="chips"><span class="chip in">Received $3,666.60</span></div>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:4px">Where the money goes in her first week</h3>
+    <p class="mut" style="font-size:.85rem;margin-bottom:10px">The client's $3,780 split between everyone. The recruiter % is a sample figure until Kekin confirms the real grid. Commissions are paid in INR; amounts in ₹ use a sample rate of <b>$1 = ₹88</b>. The app will use the rate on the day Finance approves.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Who</th><th>Why</th><th class="r">Gets</th></tr></thead>
+      <tbody>
+        <tr class="tot" style="border-top:0"><td>Client pays</td><td>24 × $90 + 12 × $135</td><td class="r">$3,780.00</td></tr>
+        <tr><td>MSP (ShiftWise program)</td><td>3% fee, taken before we are paid</td><td class="r">$113.40</td></tr>
+        <tr><td><b>Maria</b> · wages</td><td>24 × $40 + 12 × $60, taxable, via ADP</td><td class="r">$1,680.00</td></tr>
+        <tr><td><b>Maria</b> · per diem</td><td>7 × $171, tax-free, via ADP</td><td class="r">$1,197.00</td></tr>
+        <tr><td>Government &amp; insurance</td><td>Employer taxes, Workers' Comp (about 20% of wages)</td><td class="r">$336.00</td></tr>
+        <tr class="sub"><td colspan="2"><i>Gross profit left: $3,780 − all of the above</i></td><td class="r"><i>$453.60</i></td></tr>
+        <tr><td><b>Arjun</b> · recruiter</td><td>Sample 10% of gross profit, paid in INR once she passes 6 weeks</td><td class="r">$45.36<br><span class="mut">≈ ₹3,992</span></td></tr>
+        <tr><td><b>Ravi</b> · delivery manager</td><td>Not weekly: quarterly and yearly run-rate bonus (see Manager commission below)</td><td class="r">—</td></tr>
+        <tr><td><b>Kiran</b> · sales manager</td><td>Not weekly: quarterly and yearly run-rate bonus, in ₹</td><td class="r">—</td></tr>
+        <tr><td><b>Neha</b> · sales</td><td>Not weekly: flat ₹70,000 once for the account, ₹9,000 quarterly bonus</td><td class="r">—</td></tr>
+        <tr class="tot"><td>Generis Tek keeps</td><td>Before manager bonuses, office costs and salaries</td><td class="r">$408.24</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- STAGE 3 -->
+<section id="monthly" class="s3">
+  <div class="stage-h"><span class="k">Stage 3</span><h2>Every month</h2></div>
+  <div class="story">
+    <div class="st s3"><span class="n">12</span><div class="body">
+      <div class="top"><h3>Arjun's recruiter commission</h3><span class="when">Early each month</span></div>
+      <div class="meta"><span class="tag pg">Commission</span><span class="tag">Finance approves</span></div>
+      <p>Arjun earns commission on the weekly <b>spread</b> (the profit per hour on Maria) for every week she works. A placement only qualifies once she has worked <b>6 weeks</b>. Maria passes 6 weeks on 16 Mar.</p>
+      <div class="app"><b>In the app:</b> the Commission page picks Arjun's rate from the commission grid, based on his total spread that month and Maria's margin per hour. It shows every week and rate. Finance clicks <b>Approve &amp; lock month</b> so the numbers can't change, and Arjun gets his statement email on the 5th.</div>
+      <div class="chips"><span class="chip inr">Paid monthly in INR</span></div>
+    </div></div>
+
+    <div class="st s3"><span class="n">13</span><div class="body">
+      <div class="top"><h3>Neha's account payout becomes due</h3><span class="when">16 Mar</span></div>
+      <div class="meta"><span class="tag pg">Sales commission</span><span class="tag">Automatic</span></div>
+      <p>Maria was the first worker on Neha's new program and has now worked 6 weeks. The <b>Class C</b> account payout moves from Waiting to Due and goes on Neha's March statement.</p>
+      <div class="chips"><span class="chip inr">Neha ₹70,000 · due</span></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- STAGE 4 -->
+<section id="quarterly" class="s4">
+  <div class="stage-h"><span class="k">Stage 4</span><h2>Every quarter</h2><span class="mut">Q1 closes 31 Mar</span></div>
+  <div class="story">
+    <div class="st s4"><span class="n">14</span><div class="body">
+      <div class="top"><h3>Neha's quarterly hire bonus</h3><span class="when">31 Mar</span></div>
+      <div class="meta"><span class="tag pg">Sales commission</span><span class="tag">Automatic</span></div>
+      <p>Neha's accounts had 1 Medical Solutions hire in Q1 (Maria). That is the <b>Base</b> tier.</p>
+      <div class="chips"><span class="chip inr">Neha ₹9,000 · due</span></div>
+    </div></div>
+
+    <div class="st s4"><span class="n">15</span><div class="body">
+      <div class="top"><h3>Neha is paid</h3><span class="when">5 – 10 Apr</span></div>
+      <div class="meta"><span class="tag pg">Sales commission</span><span class="tag">Finance</span></div>
+      <div class="app"><b>In the app:</b> Neha's March statement (₹70,000 + ₹9,000 = <b>₹79,000</b>) is emailed on 5 Apr. She sees only her own figures. Finance checks each line, approves it, exports to Excel and pays in INR. Then they mark it <b>Paid</b> with the date and bank reference so it can't be paid twice.</div>
+      <div class="chips"><span class="chip inr">Neha ₹79,000 · paid 10 Apr</span></div>
+    </div></div>
+
+    <div class="st s4"><span class="n">16</span><div class="body">
+      <div class="top"><h3>Workers' Comp report for Q1</h3><span class="when">10 Apr</span></div>
+      <div class="meta"><span class="tag pg">Workers' Comp</span><span class="tag">Finance</span></div>
+      <p>The insurance company charges by payroll in each state, but per diem and the extra half of overtime pay are not counted. The app works this out by itself.</p>
+      <div class="app"><b>In the app:</b> Maria's weekly reportable pay is $2,877 − $1,197 per diem − $240 overtime premium = <b>$1,440</b>. Over 8 weeks in Q1 that is <b>$11,520</b> under <b>California</b>. Finance downloads the report, and the quarterly email sends it to the broker.</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- MANAGER -->
+<section id="managers" class="s4">
+  <div class="stage-h"><span class="k">Quarterly &amp; yearly</span><h2>Manager commission: Ravi and Kiran</h2></div>
+  <p>Ravi (delivery manager) and Kiran (sales manager) aren't paid per worker. They earn a bonus when the <b>run rate</b> of all their <b>new hires</b> in a quarter or year reaches a slab. Both use Kekin's 2026 plans. Ravi is paid in dollars and Kiran in rupees.</p>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px">Step 1 · Maria's run rate</h3>
+    <p class="mut" style="font-size:.88rem;margin-bottom:8px">Run rate = the hourly profit Generis Tek makes on her, using the plan's cost formula.</p>
+    <div class="tbl"><table>
+      <tbody>
+        <tr><td>Bill rate</td><td></td><td class="r">$90.00</td></tr>
+        <tr class="sub"><td>Less MSP fee 3%</td><td></td><td class="r">− $2.70</td></tr>
+        <tr class="sub"><td>Less extra 5% for healthcare hires</td><td>$87.30 × 5%</td><td class="r">− $4.37</td></tr>
+        <tr><td><b>Net bill rate</b></td><td></td><td class="r"><b>$82.93</b></td></tr>
+        <tr class="sub"><td>Pay rate × 1.20 (W2 load)</td><td>$40 × 1.20</td><td class="r">− $48.00</td></tr>
+        <tr class="sub"><td>Per diem ÷ 8</td><td>$171 ÷ 8</td><td class="r">− $21.38</td></tr>
+        <tr class="tot"><td>Maria's run rate</td><td>counts from 16 Mar (after 6 weeks)</td><td class="r">$13.56/hr</td></tr>
+      </tbody></table></div>
+    <p class="mut" style="font-size:.85rem;margin-top:8px">A perm hire counts as <b>fee ÷ 2000</b>, e.g. a $20,000 fee = $10/hr, once the warranty is over and the fee is paid. H1B workers add $5/hr + 1% of wage to the cost.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px">Step 2 · Add up the quarter (Q1 2026, example)</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>New hire</th><th>Type</th><th class="r">Run rate</th></tr></thead>
+      <tbody>
+        <tr><td>Maria Lopez</td><td>Contract, 6 weeks done 16 Mar</td><td class="r">$13.56</td></tr>
+        <tr><td>9 other new contractors on Ravi's and Kiran's accounts</td><td>Contract, 6 weeks done</td><td class="r">$181.44</td></tr>
+        <tr><td>1 perm hire, $20,000 fee</td><td>Perm, warranty over, fee paid</td><td class="r">$10.00</td></tr>
+        <tr class="tot"><td>Q1 run rate</td><td></td><td class="r">$205.00/hr</td></tr>
+      </tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px">Step 3 · Find the slab (between two slabs, the lower one is paid)</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Slab</th><th class="r">Quarter run rate</th><th class="r">Ravi</th><th class="r">Kiran</th><th class="r">Year run rate</th></tr></thead>
+      <tbody>
+        <tr style="background:var(--amb-s)"><td><b>Base ✓</b></td><td class="r">$190</td><td class="r"><b>$5,000</b></td><td class="r"><b>₹1,20,000</b></td><td class="r">$760</td></tr>
+        <tr><td>Target</td><td class="r">$304</td><td class="r">$10,000</td><td class="r">₹2,40,000</td><td class="r">$1,215</td></tr>
+        <tr><td>Stretch</td><td class="r">$423</td><td class="r">$15,000</td><td class="r">₹4,80,000</td><td class="r">$1,693</td></tr>
+        <tr><td>Super stretch</td><td class="r">$499</td><td class="r">$20,000</td><td class="r">₹7,20,000</td><td class="r">$1,995</td></tr>
+      </tbody></table></div>
+    <p class="mut" style="font-size:.88rem;margin-top:8px">$205 is between Base ($190) and Target ($304), so <b>Base</b> is paid: Ravi <b>$5,000</b> and Kiran <b>₹1,20,000</b>. Another $99/hr of new hires would have reached Target. The yearly bonus uses the same slab amounts with yearly run-rate targets.</p>
+  </div>
+
+  <div class="story">
+    <div class="st s4"><span class="n">Q</span><div class="body">
+      <div class="top"><h3>Quarterly bonus paid</h3><span class="when">31 May</span></div>
+      <div class="meta"><span class="tag pg">Manager commission</span><span class="tag">Finance</span></div>
+      <p>Paid 2 months after the quarter ends, only if Ravi and Kiran are still employed and not serving notice.</p>
+      <div class="chips"><span class="chip out">Ravi $5,000</span><span class="chip inr">Kiran ₹1,20,000</span></div>
+    </div></div>
+    <div class="st s4"><span class="n">Y</span><div class="body">
+      <div class="top"><h3>Yearly bonus and extras</h3><span class="when">28 Feb 2027 · March 2027</span></div>
+      <div class="meta"><span class="tag pg">Manager commission</span><span class="tag">Finance</span></div>
+      <p>The full-year run rate is checked against the yearly slabs (Base from $760/hr), paid 28 Feb 2027. Extra all-or-nothing bonuses are paid in March 2027. Ravi: $5,000 for office attendance and $5,000 for being a top-30% supplier. Kiran: ₹70,000 top supplier, ₹70,000 team discipline and retention, ₹60,000 training new hires.</p>
+      <div class="app"><b>In the app:</b> each manager logs in and sees their run rate, the slab reached and how much more is needed for the next slab, live. Finance ticks the extra bonuses when they are achieved.</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- STAGE 5 -->
+<section id="end" class="s5">
+  <div class="stage-h"><span class="k">Stage 5</span><h2>Assignment ends</h2></div>
+  <div class="story">
+    <div class="st s5"><span class="n">17</span><div class="body">
+      <div class="top"><h3>Last shift, travel home and wrap-up</h3><span class="when">1 – 3 May</span></div>
+      <div class="meta"><span class="tag pg">Candidates</span><span class="tag pg">Timesheets</span><span class="tag pg">Payroll</span><span class="tag">Ravi · Payroll</span></div>
+      <p>Her last shift is Fri 1 May. She flies home on Sun 3 May with 0 hours worked, so that day is a <b>partial travel day</b>: 25% = <b>$42.75</b> instead of $171.</p>
+      <div class="app"><b>In the app:</b> Ravi enters her end date. Her last week goes through the same steps: screenshot, invoice, ADP pay. After that she drops off the weekly lists, so no more missing-timesheet alerts. Arjun's commission stops with her last week. Her full history stays in Reports.</div>
+    </div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Totals over her 13 weeks</h2>
+  <div class="card tbl"><table>
+    <thead><tr><th>Who</th><th>What</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      <tr><td>Hospital (via MSP)</td><td>Paid to Generis Tek, 13 × $3,666.60</td><td class="r">$47,665.80</td></tr>
+      <tr><td>Maria</td><td>Wages and per diem, 13 × $2,877, plus arrival travel day $42.75, minus $128.25 for the travel-home day (25% instead of 100%)</td><td class="r">$37,315.50</td></tr>
+      <tr><td>Generis Tek</td><td>Gross profit, 13 × $453.60, before commissions</td><td class="r">$5,896.80</td></tr>
+      <tr><td>Neha · sales</td><td>Account payout + Q1 bonus, paid in INR</td><td class="r">₹79,000<br><span class="mut">≈ $898</span></td></tr>
+      <tr><td>Arjun · recruiter</td><td>13 × $45.36 (sample 10%), paid in INR</td><td class="r">$589.68<br><span class="mut">≈ ₹51,892</span></td></tr>
+            <tr><td>Generis Tek keeps</td><td>13 × $408.24, before manager bonuses and office costs</td><td class="r">$5,307.12</td></tr>
+    </tbody>
+  </table></div>
+  <p class="mut" style="font-size:.85rem">Assumes the same 36-hour week every week. Commissions and Generis Tek's share don't yet include the small travel-day change (+$85.50 gross profit). Q2 adds another Medical Solutions hire to Neha's count only if a new worker starts in Q2.</p>
+</section>
+
+<section id="travellers">
+  <h2>Traveller examples</h2>
+  <p>Maria is a <b>traveller</b>: she lives in Phoenix and works in LA, so she gets per diem. Here is how per diem changes in different situations, using the LA rate of <b>$171/day</b>.</p>
+  <div class="card tbl"><table>
+    <thead><tr><th>Situation</th><th>Hours worked that day</th><th>Rule</th><th class="r">Per diem that day</th></tr></thead>
+    <tbody>
+      <tr><td><b>Normal day</b> on assignment, working or not</td><td>any</td><td>Full rate</td><td class="r">$171.00</td></tr>
+      <tr><td><b>Flies in</b> on Sunday, no work</td><td>0</td><td>Partial travel day · 25%</td><td class="r">$42.75</td></tr>
+      <tr><td><b>Flies in</b> in the morning, does a 3-hour orientation</td><td>3</td><td>Partial travel day · 50%</td><td class="r">$85.50</td></tr>
+      <tr><td><b>Works a 6-hour shift</b>, then flies home</td><td>6</td><td>Not in Kekin's table · 75%? <i>(to confirm)</i></td><td class="r">$128.25?</td></tr>
+      <tr><td><b>Works a full 12-hour shift</b>, flies home at night</td><td>12</td><td>Full travel day · 100%</td><td class="r">$171.00</td></tr>
+      <tr><td><b>Goes home</b> for a week off in the middle</td><td>0</td><td>Not on assignment</td><td class="r">$0.00</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:6px">Traveller vs local worker, same job, same week</h3>
+  <p class="mut">Both are ICU nurses at the same hospital, working the same 36 hours (24 regular + 12 OT). The client pays the same. Only how the worker is paid changes.</p>
+  <div class="card tbl"><table>
+    <thead><tr><th></th><th class="r">Maria · traveller<br><span class="mut">lives in Phoenix</span></th><th class="r">Jenny · local<br><span class="mut">lives in LA (example)</span></th></tr></thead>
+    <tbody>
+      <tr><td>Client pays</td><td class="r">$3,780.00</td><td class="r">$3,780.00</td></tr>
+      <tr><td>Pay rate</td><td class="r">$40 / OT $60</td><td class="r">$58 / OT $87</td></tr>
+      <tr><td>Wages (taxable)</td><td class="r">$1,680.00</td><td class="r">$2,436.00</td></tr>
+      <tr><td>Per diem (tax-free)</td><td class="r">$1,197.00</td><td class="r">$0.00</td></tr>
+      <tr><td><b>Total paid to worker</b></td><td class="r"><b>$2,877.00</b></td><td class="r"><b>$2,436.00</b></td></tr>
+      <tr><td>Employer taxes (~20% of wages)</td><td class="r">$336.00</td><td class="r">$487.20</td></tr>
+      <tr><td>Workers' Comp reportable pay</td><td class="r">$1,440.00</td><td class="r">$2,088.00</td></tr>
+      <tr class="tot"><td>Gross profit for Generis Tek</td><td class="r">$453.60</td><td class="r">$743.40</td></tr>
+    </tbody>
+  </table></div>
+  <p class="mut" style="font-size:.85rem">The local worker's figures are made up to show the difference. Gross profit for both = client payment − MSP fee $113.40 − wages − employer taxes − per diem. A traveller takes home more because per diem isn't taxed. Per diem is only allowed when the worker really keeps a home over 50 miles away.</p>
+</section>
+
+<section>
+  <h2>All client portals (VMS)</h2>
+  <p>Maria's hours come from ShiftWise. Generis Tek has <b>20 client accounts</b> on <b>11 different VMS portals</b>. The weekly screenshot in step 7 works the same way for each one. Phase 1 builds the 3 most-used portals, which cover <b>10 of the 20 accounts</b>.</p>
+  <div class="card tbl"><table>
+    <thead><tr><th class="r">#</th><th>VMS portal</th><th class="r">Accounts</th><th>Clients</th></tr></thead>
+    <tbody>
+      <tr><td class="r">1</td><td><b>SAP Fieldglass</b></td><td class="r">5</td><td>Amerigas, Innova Health, SC Johnson, TAPFIN-Abbott, Willis Towers Watson</td></tr>
+      <tr><td class="r">2</td><td><b>WAND</b></td><td class="r">3</td><td>Children's Hospital of Philadelphia, Eisenhower Health, Keysight</td></tr>
+      <tr><td class="r">3</td><td><b>ShiftWise</b></td><td class="r">2</td><td>Medefis, Temple Health <span class="mut">(Maria's portal)</span></td></tr>
+      <tr><td class="r">4</td><td><b>Pixid VMS</b></td><td class="r">2</td><td>DTE, ULTA Beauty</td></tr>
+      <tr><td class="r">5</td><td><b>WHSN</b></td><td class="r">2</td><td>Klickitat Valley, The Rural Health Enterprise</td></tr>
+      <tr><td class="r">6</td><td><b>Beeline</b></td><td class="r">1</td><td>TAPFIN-Yum Brands</td></tr>
+      <tr><td class="r">7</td><td><b>Covendis</b></td><td class="r">1</td><td>Covendis</td></tr>
+      <tr><td class="r">8</td><td><b>Medefis</b></td><td class="r">1</td><td>Medefis</td></tr>
+      <tr><td class="r">9</td><td><b>Vector VMS</b></td><td class="r">1</td><td>DTE</td></tr>
+      <tr><td class="r">10</td><td><b>VNDLY</b></td><td class="r">1</td><td>AON</td></tr>
+      <tr><td class="r">11</td><td><b>Workforce Logic</b></td><td class="r">1</td><td>Health Trust</td></tr>
+      <tr class="tot"><td></td><td>11 portals</td><td class="r">20</td><td></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>What if something goes differently?</h2>
+  <div class="ifs">
+    <div class="card"><b>The hospital hires Maria permanently</b><span class="mut">Ravi records it on Direct hires (FTE) and Finance invoices the placement fee. For Neha, if this is a new perm client, Sample 1 Part 2 applies: ₹40,000 after the warranty ends and the fee is paid.</span></div>
+    <div class="card"><b>Maria leaves in week 4</b><span class="mut">Arjun's placement never qualifies (under 6 weeks). Neha's account payout keeps waiting for a worker who reaches 6 weeks (to confirm with Kekin).</span></div>
+    <div class="card"><b>She works a 13-hour shift</b><span class="mut">California rule: 8 regular, 4 overtime and 1 double time. Billed and paid at those rates automatically.</span></div>
+    <div class="card"><b>The client short-pays</b><span class="mut">Finance records the amount actually received. The line shows <b>Short paid</b> with the balance and stays on the overdue email until it is settled.</span></div>
+    <div class="card"><b>A recruiter logs in</b><span class="mut">Access control decides what they see. Arjun sees his own commission but not bill rates or margins, unless he is ticked for them.</span></div>
+    <div class="card"><b>The ShiftWise password expires</b><span class="mut">The screenshot fails and Admin gets the alert email. Ravi can still approve hours, and the screenshot is retaken once the login is fixed.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Which page does what</h2>
+  <div class="card tbl"><table class="map">
+    <thead><tr><th>Page</th><th>Used in steps</th><th>Its job in Maria's story</th></tr></thead>
+    <tbody>
+      <tr><td>Clients</td><td>1</td><td>Client terms, MSP fee, state, sales person, account size</td></tr>
+      <tr><td>Client portals (VMS)</td><td>2, 7, 8</td><td>Weekly screenshot of approved hours; the recruiter enters hours from it</td></tr>
+      <tr><td>Candidates</td><td>4, 17</td><td>Her rates, dates, recruiter, sales person, business line</td></tr>
+      <tr><td>Per diem</td><td>4, 6, 10, 17</td><td>Checks she travels, caps per diem at the GSA rate, applies the travel-day %</td></tr>
+      <tr><td>Monthly timesheet</td><td>6, 8</td><td>Recruiter types daily hours; splits into regular and overtime by state law</td></tr>
+      <tr><td>Timesheets</td><td>9</td><td>Delivery manager checks against the screenshot and approves</td></tr>
+      <tr><td>Invoices &amp; payments</td><td>9, 11</td><td>What the client owes, due dates, payments received</td></tr>
+      <tr><td>Payroll · ADP export</td><td>5, 10</td><td>Her pay for each pay date, file for ADP</td></tr>
+      <tr><td>Commission</td><td>12</td><td>Arjun's recruiter commission, approved and locked monthly</td></tr>
+      <tr><td>Manager commission</td><td>Q, Y</td><td>Ravi's and Kiran's quarterly and yearly run-rate bonus</td></tr>
+      <tr><td>Sales commission</td><td>1, 13–15</td><td>Neha's account payout and quarterly bonus</td></tr>
+      <tr><td>Workers' Comp</td><td>16</td><td>Quarterly payroll by state for the insurer</td></tr>
+      <tr><td>Email &amp; alerts</td><td>9–16</td><td>Missing timesheets, overdue invoices, payroll ready, statements, WC report</td></tr>
+      <tr><td>Access control</td><td>all</td><td>Who sees which page and which money columns</td></tr>
+    </tbody>
+  </table></div>
+  <p class="mut" style="font-size:.85rem">Sales commission rules in detail: <a href="https://claude.ai/artifact/89RGPRExUGpVixPjLoydAg" target="_blank" rel="noopener">Sales Commission Flow</a>.</p>
+</section>
+
+</div>
+
+</body>
+</html>
