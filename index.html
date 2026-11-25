@@ -1215,7 +1215,7 @@ PERMS.rec.scope='Only their own commission';PERMS.rec.nav=['mycomm'];BASE.rec.na
 if(!KINDS.find(x=>x[0]==='sp')){KINDS.push(['sp','Sales person']);KLBL.sp='Sales person';PERMS.sp={nav:['mycomm'],bill:0,pay:0,margin:0,scope:'Only their own commission'};BASE.sp={nav:['mycomm'],bill:0,pay:0,margin:0};SCOPED.push('sp')}
 ensureUsers();{let nu=S.users.find(u=>u.id==='neha');if(nu)S.users.splice(S.users.indexOf(nu),1);else nu={id:'neha',label:'Neha · Sales person',name:'Neha',email:'neha@generistek.com',kind:'sp',p:'Neha',active:true,added:ASOF};const bi=S.users.findIndex(u=>u.id==='bidya');S.users.splice(bi>=0?bi+1:S.users.length,0,nu)}
 window.pmX0=1;
-window.pmX=r=>['dm','sd'].includes(r.kind)?Object.assign({},PERMS[r.kind],{nav:['mycomm'],scope:'Only their own commission'}):r.kind==='lead'&&/Sales/.test(r.label||'')?Object.assign({},PERMS.lead,{nav:['mycomm'],scope:'Only their own commission'}):null;PERMS.lead.scope='Only their own placements (sales lead: their clients · delivery lead: their team)';
+window.pmX=r=>['admin','finance','exec'].includes(r.kind)?Object.assign({},PERMS[r.kind],{nav:PERMS[r.kind].nav.filter(p=>p!=='mycomm')}):['dm','sd'].includes(r.kind)?Object.assign({},PERMS[r.kind],{nav:['mycomm'],scope:'Only their own commission'}):r.kind==='lead'&&/Sales/.test(r.label||'')?Object.assign({},PERMS.lead,{nav:['mycomm'],scope:'Only their own commission'}):null;PERMS.lead.scope='Only their own placements (sales lead: their clients · delivery lead: their team)';
 applyAcl();
 
 const dow=d=>new Date(P(d)).getUTCDay();
